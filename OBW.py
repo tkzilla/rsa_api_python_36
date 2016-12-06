@@ -95,6 +95,43 @@ def search_connect():
         rsa.DEVICE_Connect(deviceIDs[selection])
         return selection
 
+def calc_obw(trace, freq, span, rbw, tLength):
+    #integrated power calculation
+    #convert dBm to mW and normalize to span
+    mW = 10**(trace/10)*span/rbw/tLength
+    #numerical integration --> total power in mW
+    totPower = np.trapz(mW)
+    print('Total Power in mW: %f' % totPower)
+    print('Total Power in dBm: {:.2f}'.format(10*np.log10(totPower)))
+
+    #percent occupied bandwidth
+    obwpcnt = 0.99
+
+    #Sum the power of each point together working in from both sides of the 
+    #trace until the sum is > 1-obwpcnt of total power. When the sum is reached, 
+    #save the frequencies at which it occurs.
+    psum = j = k = 0
+    debug = []
+    left = []
+    right = []
+    while psum <= (1-obwpcnt)*totPower:
+        # left side
+        if psum <= (1-obwpcnt)*totPower/2:
+            j += 1
+            psum += mW[j]
+        # right side
+        else:
+            k -= 1
+            psum += mW[k]
+    f1 = freq[j]
+    f2 = freq[k]
+
+    #occupied bandwidth is the difference between f1 and f2
+    # obw = f2-f1
+    print('OBW: {:.2f} MHz'.format((f2-f1)/1e6))
+    print('Power at f1: {:3.2f} dBm. Power at f2: {:3.2f} dBm'.format(trace[j], trace[k]))
+    return f2-f1, f1, f2
+
 def print_spectrum_settings(specSet):
     #print out spectrum settings for a sanity check
     print('Span: ' + str(specSet.span))
@@ -198,39 +235,11 @@ def main():
     #Peak power and frequency calculations
     peakPower = np.amax(trace)
     peakPowerFreq = freq[np.argmax(trace)]
-    print('Peak power in spectrum: %4.3f dBm @ %d Hz' % (peakPower, peakPowerFreq))
+    print('Peak power in spectrum: {:4.3f} dBm @ {:.2f} Hz'.format(peakPower, peakPowerFreq))
 
 
     """#################OCCUPIED BANDWIDTH MEASUREMENT#################"""
-    #integrated power calculation
-    #convert dBm to mW and normalize to span
-    mW = 10**(trace/10)*specSet.span/specSet.actualRBW/specSet.traceLength
-    #numerical integration --> total power in mW
-    totPower = np.trapz(mW)
-    #convert total power to dBm
-    totdBm = 10*np.log10(totPower)
-    #print('Total Power in mW: %f' % totPower)
-    #print('Total Power in dBm: %3.2f' % totdBm)
-
-    #percent occupied bandwidth
-    obwpcnt = 0.99
-
-    #Sum the power of each point together working in from both sides of the 
-    #trace until the sum is > 1-obwpcnt of total power. When the sum is reached, 
-    #save the frequencies at which it occurs.
-    psum = j = k = 0
-    while psum <= (1-obwpcnt)*totPower:
-        psum = psum + mW[j] + mW[k]
-       	j += 1
-       	k -= 1
-        f1 = freq[j]
-        f2 = freq[k]
-
-    #occupied bandwidth is the difference between f1 and f2
-    obw = f2-f1
-    print('OBW: %f MHz' % (obw/1e6))
-    #print('Power at f1: %3.2f dBm. Power at f2: %3.2f dBm' % (trace[j], trace[k]))
-
+    obw, f1, f2 = calc_obw(trace, freq, specSet.span, specSet.rbw, specSet.traceLength)
 
     """#################SPECTRUM PLOT#################"""
     #plot the spectrum trace (optional)
@@ -244,7 +253,7 @@ def main():
     plt.axvline(x=f1)
     plt.axvline(x=f2)
     text_x = specSet.actualStartFreq + specSet.span/20
-    plt.text(text_x, peakPower, 'OBW: %5.4f MHz' % (obw/1e6), color='white')
+    plt.text(text_x, peakPower, 'OBW: {:3.2f} MHz'.format(obw/1e6), color='white')
 
     #BONUS clean up plot axes
     xmin = np.amin(freq)

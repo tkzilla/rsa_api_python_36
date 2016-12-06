@@ -81,8 +81,8 @@ def main():
     #main SA parameters
     refLevel = c_double(0)
     cf = c_double(1e9)
-    iqBandwidth = c_double(5e6)
-    acqTime = 1e-3
+    iqBandwidth = c_double(20e6)
+    acqTime = 10e-3
     recordLength = c_int(int(iqBandwidth.value*1.4*acqTime))
 
     actLength = c_int(0)
@@ -125,9 +125,9 @@ def main():
     rsa.CONFIG_GetReferenceLevel(byref(refLevel))
     rsa.IQBLK_GetIQBandwidth(byref(iqBandwidth))
     rsa.IQBLK_GetIQRecordLength(byref(recordLength))
-    rsa.TRIG_GetTriggerMode(byref(trigMode))
-    rsa.TRIG_GetIFPowerTriggerLevel(byref(trigLevel))
-    rsa.TRIG_GetTriggerSource(byref(trigSource))
+    # rsa.TRIG_GetTriggerMode(byref(trigMode))
+    # rsa.TRIG_GetIFPowerTriggerLevel(byref(trigLevel))
+    # rsa.TRIG_GetTriggerSource(byref(trigSource))
     rsa.DEVICE_GetEnable(byref(runMode))
     rsa.IQBLK_GetIQSampleRate(byref(iqSampleRate))
 
@@ -159,8 +159,12 @@ def main():
     I = np.ctypeslib.as_array(iData)
     Q = np.ctypeslib.as_array(qData)
 
-    time = np.linspace(0,recordLength.value/iqSampleRate.value,recordLength.value)
+    IQ = I + 1j*Q
 
+    # outfile = open('C:\Users\mallison\Documents\GitHub\RSA_API-Python-3.5\IQ_data.npy')
+    np.save('C:\\Users\\mallison\\Documents\\GitHub\\RSA_API-Python-3.5\\IQ_data.npy', IQ)
+
+    time = np.linspace(0,recordLength.value/iqSampleRate.value,recordLength.value)
 
     """#################PLOTS#################"""
     plt.suptitle('I and Q vs Time', fontsize='20')
