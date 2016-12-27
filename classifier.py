@@ -15,6 +15,7 @@ from ctypes import *
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+from pickle import dump
 
 
 """
@@ -96,43 +97,185 @@ def search_connect():
 		return selection
 
 
-def calc_obw(trace, freq, span, rbw, tLength):
-	#integrated power calculation
+def calc_int_power(trace, span, rbw, tLength):
 	#convert dBm to mW and normalize to span
 	mW = 10**(trace/10)*span/rbw/tLength
-	#numerical integration --> total power in mW
+	# numerical integration --> total power in mW
 	totPower = np.trapz(mW)
-	#print('Total Power in mW: %f' % totPower)
-	print('Total Power in dBm: {:.2f}'.format(10*np.log10(totPower)))
+	# print('Total Power in dBm: {:.2f}'.format(10*np.log10(totPower)))
+	return mW, totPower
 
-	#percent occupied bandwidth
-	obwpcnt = 0.99
+
+def calc_channel_power(trace, f1, f2, freq, rbw):
+	# Get indices of f1 and f2
+	if f1 == f2 == 0:
+		return 0
+	else:
+		f1Index = np.where(freq==f1)[0][0]
+		f2Index = np.where(freq==f2)[0][0]
+		# calculate integrated power betweeen f1 and f2
+		mW = 10**(trace[f1Index:f2Index]/10)*(f2-f1)/rbw/(f2Index-f1Index)
+		totPower = np.trapz(mW)
+		# if totPower <= 0:
+		# 	print('Total Power: {}'.format(totPower))
+		# 	print('F1: {:.3f} GHz. F2: {:.3f} GHz'.format(f1/1e9, f2/1e9))
+		# 	plt.figure(1)
+		# 	plt.plot(freq, trace)
+		# 	plt.show(block=False)
+		return 10*np.log10(totPower)
+
+def calc_obw_pcnt(trace, freq, span, rbw, tLength):
+	#integrated power calculation
+	mW, totPower = calc_int_power(trace, span, rbw, tLength)
+	obwPcnt = 0.99
 
 	#Sum the power of each point together working in from both sides of the 
-	#trace until the sum is > 1-obwpcnt of total power. When the sum is reached, 
+	#trace until the sum is > 1-obwPcnt of total power. When the sum is reached, 
 	#save the frequencies at which it occurs.
 	psum = j = k = 0
 	debug = []
 	left = []
 	right = []
-	while psum <= (1-obwpcnt)*totPower:
+	target = (1-obwPcnt)*totPower
+	while psum <= target:
 		# left side
-		if psum <= (1-obwpcnt)*totPower/2:
+		if psum <= target/2:
 			j += 1
 			psum += mW[j]
+			left.append(mW[j])
 		# right side
 		else:
 			k -= 1
 			psum += mW[k]
+			right.append(mW[k])
+		debug.append(psum)
 	f1 = freq[j]
 	f2 = freq[k]
 
-	#occupied bandwidth is the difference between f1 and f2
+	if f2<f1:
+		psum = j = k = 0
+		while psum <= target:
+		# right side
+			if psum <= target/2:
+				k -= 1
+				psum += mW[k]
+				right.append(mW[k])
+			# left side
+			else:
+				j += 1
+				psum += mW[j]
+				left.append(mW[j])
+			debug.append(psum)
+		# if j == 0 or k == 0:
+		# 	f1 = f2 = 0
+		# else:
+		f1 = freq[j]
+		f2 = freq[k]
+	# if f2-f1 > 25e6:
+	# 	# print('F1: {:.3f} GHz. F2: {:.3f} GHz. OBW: {:.3f}'.format(f1/1e9, f2/1e9, (f2-f1)))
+	# 	plt.figure(1)
+	# 	plt.plot(freq, trace)
+	# 	plt.axvline(freq[j], color='g')
+	# 	plt.axvline(freq[k], color='r')
+	# 	plt.show(block=False)
+	# #occupied bandwidth is the difference between f1 and f2
 	# obw = f2-f1
 	# print('OBW: %f MHz' % (obw/1e6))
 	#print('Power at f1: %3.2f dBm. Power at f2: %3.2f dBm' % (trace[j], trace[k]))
-	return f2-f1, f1, f2
+	return f1, f2
 
+
+def calc_obw_db(trace, freq, dB):
+	peakPower = np.amax(trace)
+	l = r = 0
+	t1 = (peakPower-dB)
+	t2 = (peakPower-dB/2)
+	# start from outside
+	if (np.amax(trace) - np.amin(trace)) < dB:
+		print('Insufficient SNR.')
+		return 0, 0
+	try:
+		# go in further than you need to
+		while trace[l] < t2:
+			l+=1
+		# then move back out
+		while trace[l] > t1:
+			l-=1
+		# repeat for other side
+		while trace[r] < t2:
+			r-=1
+		while trace[r] > t1:
+			r+=1
+	except IndexError as idx:
+		print('r: {}\nl: {}'.format(r,l))
+		print('{}, trying inside.'.format(idx))
+		# plt.figure(5)
+		# plt.plot(freq,trace)
+		# plt.axvline(freq[l+1], color='red')
+		# plt.axvline(freq[r-1], color='red')
+		# plt.show()		
+
+		try:
+			l = r = np.argmax(trace)
+			# start from inside
+			while trace[l] > (peakPower-dB):
+				l -= 1
+			while trace[r] > (peakPower-dB):
+				r += 1
+		except IndexError as idx:
+			print('{}, setting f1 = f2 = 0.'.format(idx))
+			return 0, 0
+
+	return freq[l], freq[r]
+
+
+# def calc_obw_pcnt(trace, freq, span, rbw, tLength):
+# 	mW, totPower = calc_int_power(trace, span, rbw, tLength)
+# 	obwPcnt = 0.5
+# 	#Sum the power of each point together working out from the max value of the  
+# 	#trace until the sum is > 1-obwPcnt of total power. When the sum is reached, 
+# 	#save the frequencies at which it occurs.
+# 	psum = 0
+# 	j = k = np.argmax(trace)
+# 	debug = []
+# 	left = []
+# 	right = []
+# 	target = obwPcnt*totPower
+# 	toggle = 1
+# 	print('Target: {:.5f} mW'.format(target))
+# 	print('Power at roughcf: {:.5f}'.format(mW[j]))
+# 	while psum <= target:
+# 		# left side
+# 		if toggle == 1 and psum < target:
+# 			j += 1
+# 			psum += mW[j]
+# 			left.append(mW[j])
+# 			toggle = -1
+# 		# right side
+# 		elif toggle == -1 and psum < target:
+# 			k -= 1
+# 			psum += mW[k]
+# 			right.append(mW[k])
+# 			toggle = 1
+# 		else:
+# 			print('???????')
+# 		debug.append(psum)
+# 	f1 = freq[k]
+# 	f2 = freq[j]
+
+# 	# plt.figure(4, figsize=(20,10))
+# 	# plt.subplot(211)
+# 	# plt.plot(left)
+# 	# plt.plot(right)
+# 	# plt.plot(debug)
+# 	# plt.subplot(212, axisbg='k')
+# 	# plt.plot(freq, trace, color='y')
+# 	# plt.axvline(f1, color='y')
+# 	# plt.axvline(f2, color='y')
+# 	# plt.axvline(freq[np.argmax(trace)], color='b')
+# 	# plt.show()
+
+# 	return f1, f2
 
 def print_spectrum_settings(specSet):
 	#print out spectrum settings for a sanity check
@@ -149,27 +292,26 @@ def print_spectrum_settings(specSet):
 	print('Actual RBW: ' + str(specSet.actualRBW))
 	print('Actual VBW: ' + str(specSet.actualVBW))
 
+
 def main():
 	"""################INITIALIZE VARIABLES################"""
 	#main SA parameters
 	specSet = Spectrum_Settings()
+	tSetSize = 100
+
 	enable = True       #spectrum enable
-	cf = 2.43e9        #center freq
-	refLevel = -20      #ref level
+	cf = 2.435e9        #center freq
+	refLevel = -30      #ref level
 	attn = 0
 	
 	trigMode = 1                  #0=freerun, 1=triggered
-	trigLevel = -30               #trigger level in dBm
+	trigLevel = -50               #trigger level in dBm
 	trigSource = 1                #0=ext, 1=RFPower
 
 	ready = c_bool(False)         #ready
 	timeoutMsec = c_int(100)      #timeout
 	trace = c_int(0)              #select Trace 1 
 	detector = c_int(1)           #set detector type to max
-
-	traceInfo = Spectrum_TraceInfo()
-	o_timeSec = c_uint64(0)
-	o_timeNsec = c_uint64(0)
 
 
 	"""################SEARCH/CONNECT################"""
@@ -185,9 +327,9 @@ def main():
 	rsa.CONFIG_SetRFAttenuator(c_double(attn))
 	rsa.CONFIG_SetRFPreampEnable(c_bool(True))
 
-	rsa.TRIG_SetTriggerMode(c_int(1))
+	rsa.TRIG_SetTriggerMode(c_int(trigMode))
 	rsa.TRIG_SetIFPowerTriggerLevel(c_double(trigLevel))
-	rsa.TRIG_SetTriggerSource(c_int(1))
+	rsa.TRIG_SetTriggerSource(c_int(trigSource))
 	rsa.TRIG_SetTriggerPositionPercent(c_double(10))
 
 	rsa.SPECTRUM_SetEnable(c_bool(enable))
@@ -229,9 +371,14 @@ def main():
 		specSet.actualStartFreq + specSet.actualFreqStepSize*specSet.traceLength, 
 		specSet.actualFreqStepSize)
 
-	tSetSize = 5
-	trace = np.zeros((100,specSet.traceLength))
-	obw = np.zeros(100)
+	trace = np.zeros((tSetSize,specSet.traceLength))
+	obw = []#np.zeros(tSetSize)
+	roughCF = []#np.zeros(tSetSize)
+	chPow = []#np.zeros(tSetSize)
+	peakPower = []#np.zeros(tSetSize)
+	errors = []
+	f1e = []
+	f2e = []
 
 
 	"""################ACQUIRE/PROCESS DATA################"""
@@ -248,38 +395,94 @@ def main():
 
 		#convert trace data from a ctypes array to a numpy array
 		trace[i] = np.ctypeslib.as_array(traceData)
+
+		"""################FEATURE CALCULATION################"""
+		# f1, f2 = calc_obw_pcnt(trace[i], freq, specSet.span, specSet.actualRBW, specSet.traceLength)
+		f1, f2 = calc_obw_db(trace[i], freq, 20)
+		if (f2-f1 > 0 and f2-f1 < 25e6):
+			obw.append(f2-f1)
+			roughCF.append(np.mean([f1,f2]))
+			chPow.append(calc_channel_power(trace[i], f1, f2, freq, specSet.actualRBW))	#calculate this from calc_owb
+			peakPower.append(np.amax(trace[i]))
+		# if obw[i] > 30e6:
+		# 	f1,f2 = calc_obw_pcnt(trace[i], freq, specSet.span, specSet.actualRBW, specSet.traceLength)
+		if f2-f1 > 25e6:
+			errors.append(trace[i])
+			plt.figure(1)
+			plt.subplot(111, axisbg='k')
+			plt.title('>25')
+			plt.plot(freq, trace[i])
+			plt.axvline(f1, color='w')
+			plt.axvline(f2, color='b')
+			plt.show(block=False)
+		# if obw[i] <= 0:
+		# 	plt.figure(6)
+		# 	plt.subplot(111, axisbg='y')
+		# 	plt.title('<0')
+		# 	plt.plot(freq,trace[i])
+		# 	plt.axvline(f1, color='w')
+		# 	plt.axvline(f2, color='b')
+		# 	plt.show(block=False)
 		
-		"""################OCCUPIED BANDWIDTH MEASUREMENT################"""
-		obw[i], f1, f2 = calc_obw(trace[i], freq, specSet.span, specSet.actualRBW, specSet.traceLength)
+
+		# print('Rough CF: {:.3f} GHz'.format(roughCF[i]/1e9))
+		# print('Channel power: {:.3f} dBm'.format(chPow[i]))
+		# print('Peak Power: {:.3f} dBm'.format(peakPower[i]))
+		# print('Occupied Bandwidth: {:.3f} MHz'.format(obw[i]/1e6))
 
 		"""################SPECTRUM PLOT################"""
 		# #plot the spectrum trace (optional)
-		plt.subplot(111, axisbg='k')
-		plt.plot(freq, trace[i], 'y')
-		plt.xlabel('Frequency (Hz)')
-		plt.ylabel('Amplitude (dBm)')
-		plt.title('Spectrum')
+		# plt.figure(2, figsize=(20,10))
+		# plt.subplot(111, axisbg='k')
+		# plt.plot(freq, trace[i], 'y')
+		# plt.xlabel('Frequency (Hz)')
+		# plt.ylabel('Amplitude (dBm)')
+		# plt.title('Spectrum')
 
-		#Place vertical bars at f1 and f2 and annotate measurement
-		plt.axvline(x=f1)
-		plt.axvline(x=f2)
-		text_x = specSet.actualStartFreq + specSet.span/20
-		plt.text(text_x, np.amax(trace[i]), 'OBW: %5.4f MHz' % (obw[i]/1e6), color='white')
+		# #Place vertical bars at f1 and f2 and annotate measurement
+		# plt.axvline(x=f1)
+		# plt.axvline(x=f2)
+		# plt.axvline(x=roughCF[i])
+		# text_x = specSet.actualStartFreq + specSet.span/20
+		# plt.text(text_x, np.amax(trace[i]), 'OBW: %5.4f MHz' % (obw[i]/1e6), color='white')
 
-		#BONUS clean up plot axes
-		xmin = np.amin(freq)
-		xmax = np.amax(freq)
-		plt.xlim(xmin,xmax)
-		ymin = np.amin(trace)-10
-		ymax = np.amax(trace)+10
-		plt.ylim(ymin,ymax)
+		# #BONUS clean up plot axes
+		# xmin = np.amin(freq)
+		# xmax = np.amax(freq)
+		# plt.xlim(xmin,xmax)
+		# ymin = np.amin(trace)-10
+		# ymax = np.amax(trace)+10
+		# plt.ylim(ymin,refLevel)
+		# plt.show()
 
-		plt.show()
 
+	with open('C:\\users\\mallison\\Documents\\GitHub\\RSA_API-Python-3.5\\error_traces.pickle', 'wb') as f:
+		dump(errors, f)
 	print('Disconnecting.')
 	rsa.DEVICE_Disconnect()
 
-"""Save some features"""
+	"""Save some features here"""
+	# Feature matrix
+	# delIndices = np.where(obw<=0)
+	# np.delete(roughCF, delIndices)
+	# np.delete(obw, delIndices)
+	# np.delete(chPow, delIndices)
+	# np.delete(peakPower, delIndices)
+	X = np.stack((roughCF,obw,chPow,peakPower), axis=1)
+	# with open("C:\users\mallison\Documents\GitHub\RSA_API-Python-3.5\ism_features.pickle", 'wb') as f:
+		# dump(X,f)
+	plt.figure(3, figsize=(20,10))
+	plt.subplot(111)
+	plt.scatter(np.array(roughCF)/1e9, np.array(obw)/1e6)
+	plt.xlabel('Rough CF in GHz')
+	plt.ylabel('OBW in MHz')
+	plt.show()
+
+	# for i in range(len(trace)):
+	# 	plt.figure(1, figsize=(20,10))
+	# 	plt.plot(freq, trace[i])
+	# plt.show()
+
 
 if __name__ == "__main__":
 	main()

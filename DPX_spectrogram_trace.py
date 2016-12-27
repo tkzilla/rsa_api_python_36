@@ -152,7 +152,7 @@ def main():
 
     #SA setup
     cf = c_double(2.4453e9)              #center freq
-    refLevel = c_double(-40)          #ref level
+    refLevel = c_double(-30)          #ref level
     
     #bools/timeouts
     enable = c_bool(True)           #DPX enable

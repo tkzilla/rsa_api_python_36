@@ -115,7 +115,7 @@ def main():
 	#main SA parameters
 	specSet = Spectrum_Settings()
 	enable = c_bool(True)         #spectrum enable
-	cf = c_double(1e9)            #center freq
+	cf = c_double(2.4453e9)            #center freq
 	refLevel = c_double(0)        #ref level
 	ready = c_bool(False)         #ready
 	timeoutMsec = c_int(100)      #timeout

@@ -96,11 +96,11 @@ def search_connect():
 def main():
 	"""#################INITIALIZE VARIABLES#################"""
 	#main SA parameters
-	cf = c_double(1e9)
+	cf = c_double(2.412e9)
 	refLevel = c_double(0)
 	bwHz_act = c_double(0)
 	sRate = c_double(0)
-	durationMsec = 1000
+	durationMsec = 10000
 	waitTime = 0.1
 	fileDirectory = 'C:\SignalVu-PC Files\!garbage'
 	fileName = 'stream_test'
@@ -194,7 +194,7 @@ def main():
 	start = time.clock()
 	rsa.IFSTREAM_SetEnable(c_bool(True))
 	print("waiting for trigger")
-	time.sleep(3)
+	# time.sleep(3)
 	rsa.TRIG_ForceTrigger()
 	while streaming == True:
 		rsa.SPECTRUM_AcquireTrace()
@@ -219,7 +219,7 @@ def main():
 	end = time.clock()
 
 	rsa.DEVICE_Stop()
-	plt.close()
+	# plt.close()
 	print('Streaming finished.')
 	print('Elapsed time: {} seconds.\n'.format(end-start))
 	print('Disconnecting.')

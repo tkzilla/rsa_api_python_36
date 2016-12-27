@@ -111,9 +111,6 @@ def calc_obw(trace, freq, span, rbw, tLength):
     #trace until the sum is > 1-obwpcnt of total power. When the sum is reached, 
     #save the frequencies at which it occurs.
     psum = j = k = 0
-    debug = []
-    left = []
-    right = []
     while psum <= (1-obwpcnt)*totPower:
         # left side
         if psum <= (1-obwpcnt)*totPower/2:
