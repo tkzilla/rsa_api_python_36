@@ -2,17 +2,19 @@
 Tektronix RSA API: GNSS Setup and Testing
 Author: Morgan Allison
 Date Created: 6/16
-Date edited: 11/16
+Date edited: 1/17
 Windows 7 64-bit
 RSA API version 3.9.0029
 Python 3.5.2 64-bit (Anaconda 4.2.0)
-NumPy 1.11.0, MatPlotLib 1.5.3
+PyNMEA2 1.7.1 (pip install pynmea2)
 To get Anaconda: http://continuum.io/downloads
 Anaconda includes NumPy and MatPlotLib
 """
 
 from ctypes import *
-import os, pynmea2, datetime, calendar
+import pynmea2, datetime
+from os import chdir
+from calendar import timegm
 
 """
 ################################################################
@@ -20,7 +22,7 @@ C:\Tektronix\RSA306 API\lib\x64 needs to be added to the
 PATH system environment variable
 ################################################################
 """
-os.chdir("C:\\Tektronix\\RSA_API\\lib\\x64")
+chdir("C:\\Tektronix\\RSA_API\\lib\\x64")
 rsa = cdll.LoadLibrary("RSA_API.dll")
 
 """#################CLASSES AND FUNCTIONS#################"""

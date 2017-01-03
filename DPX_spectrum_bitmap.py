@@ -2,11 +2,11 @@
 RSA API: DPX Spectrum Bitmap Visualizer
 Author: Morgan Allison (and Dave Maciupa)
 Date created: 11/15
-Date edited: 12/16
+Date edited: 1/17
 Windows 7 64-bit
 RSA API version 3.9.0029
 Python 3.5.2 64-bit (Anaconda 4.2.0)
-NumPy 1.11.0, MatPlotLib 1.5.3
+NumPy 1.11.2, MatPlotLib 1.5.3
 To get Anaconda: http://continuum.io/downloads
 Anaconda includes NumPy and MatPlotLib
 """
@@ -14,7 +14,6 @@ Anaconda includes NumPy and MatPlotLib
 from ctypes import *
 import numpy as np
 from matplotlib import use
-use('Qt4Agg')
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import os, time
@@ -183,15 +182,18 @@ def main():
 		 showOnlyTrigFrame)
 	rsa.DPX_Configure(c_bool(True),c_bool(False))    #(spectrum, sogram)
 	rsa.DPX_GetSettings(byref(dsStruct))
-	# setting up spectrum trace 1 as a max hold trace
+
+	# max hold c_int(2), min hold c_int(4), and average c_int(0) traces
+	# see RSA_API documentation for more details
 	rsa.DPX_SetSpectrumTraceType(c_int32(0), c_int(2))
 	rsa.DPX_SetSpectrumTraceType(c_int32(1), c_int(4))
 	rsa.DPX_SetSpectrumTraceType(c_int32(2), c_int(0))
+	
 	#print_dpxSettings(dsStruct)
 
 
 	"""#################ACQUIRE DATA#################"""
-	print('\nDPX spectrum is being generated\n')
+	print('\nGenerating DPX Frame\n')
 
 	#acquisition loop
 	rsa.DEVICE_Run()
@@ -216,44 +218,44 @@ def main():
 		(cf.value + fspan.value/2), fb.spectrumBitmapWidth)
 	bitmapAmp = np.linspace(yBottom.value, yTop.value, fb.spectrumBitmapHeight)
 
-	#grab spectrum bitmap
-	#specifying the shape of the destination variable is IMPORTANT
+	# grab spectrum bitmap
+	# specifying the shape of the destination variable is IMPORTANT
 	dpxBitmap = np.ctypeslib.as_array(fb.spectrumBitmap, 
 		shape=(fb.spectrumBitmapSize,))
 	dpxBitmap = dpxBitmap.reshape((fb.spectrumBitmapHeight, 
 		fb.spectrumBitmapWidth))
 
-	specTrace1 = np.array(fb.spectrumTraces[0][:801])
-	specTrace1 = 10*np.log10(specTrace1/1000)
-	specTrace2 = np.array(fb.spectrumTraces[1][:801])
-	specTrace2 = 10*np.log10(specTrace2/1000)
-	specTrace3 = np.array(fb.spectrumTraces[2][:801])
-	specTrace3 = 10*np.log10(specTrace3/1000)
+	# grab trace data and convert from W to dBm
+	specTrace1 = 20*np.log10(np.array(fb.spectrumTraces[0][:801])/1000)
+	# specTrace1 = 10*np.log10(specTrace1/1000)
+	specTrace2 = 20*np.log10(np.array(fb.spectrumTraces[1][:801])/1000)
+	# specTrace2 = 10*np.log10(specTrace2/1000)
+	specTrace3 = 20*np.log10(np.array(fb.spectrumTraces[2][:801])/1000)
+	# specTrace3 = 10*np.log10(specTrace3/1000)
 
 
 	"""#################PLOT#################"""
-	# This figure plots out the three DPX spectrum traces
-	fig1 = plt.figure(1)
-	ax = fig1.add_subplot(111)
-	ax.set_title('DPX Spectrum Traces')
-	ax.set_xlabel('Frequency (Hz)')
-	ax.set_ylabel('Amplitude (dBm)')
+	# Plot out the three DPX spectrum traces
+	fig1 = plt.figure(1, figsize=(20,10))
+	ax1 = fig1.add_subplot(121)
+	ax1.set_title('DPX Spectrum Traces')
+	ax1.set_xlabel('Frequency (Hz)')
+	ax1.set_ylabel('Amplitude (dBm)')
 	st1, = plt.plot(bitmapFreq, specTrace1)
 	st2, = plt.plot(bitmapFreq, specTrace2)
 	st3, = plt.plot(bitmapFreq, specTrace3)
-	ax.legend([st1, st2, st3], ['Max Hold', 'Min Hold', 'Average'])
-	ax.set_xlim([np.amin(bitmapFreq), np.amax(bitmapFreq)])
-	plt.show(block=False)
+	ax1.legend([st1, st2, st3], ['Max Hold', 'Min Hold', 'Average'])
+	ax1.set_xlim([bitmapFreq[0], bitmapFreq[-1]])
+	# plt.show(block=False)
 
 	# This figure is a 3D representation of the DPX bitmap  
 	# The methodology was cobbled together from a few Matplotlib example files
 	# If anyone can figure out how to do a 3D colormap, that'd be cool.
-	fig2 = plt.figure(2, figsize=(12,12))
-	ax2 = fig2.gca(projection='3d')
+	ax2 = fig1.add_subplot(122, projection='3d')
 	for i in range(fb.spectrumBitmapHeight):
 		index = fb.spectrumBitmapHeight-1-i
 		ax2.plot(dpxBitmap[i], bitmapFreq, bitmapAmp[index], c='b')
-	plt.title('DPX Bitmap')
+	ax2.set_title('DPX Bitmap')
 	ax2.set_zlim(yBottom.value,yTop.value)
 	ax2.set_xlabel('Spectral Density (counter hits)')
 	ax2.set_ylabel('Frequency (Hz)')
@@ -264,6 +266,7 @@ def main():
 	"""#################DISCONNECT#################"""
 	print('\nDisconnecting.')
 	rsa.DEVICE_Disconnect()
+
 
 if __name__ == "__main__":
 	main()

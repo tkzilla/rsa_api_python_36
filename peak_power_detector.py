@@ -2,11 +2,11 @@
 Tektronix RSA API: Peak Power Detector
 Author: Morgan Allison
 Date created: 6/15
-Date edited: 11/16
+Date edited: 1/17
 Windows 7 64-bit
 RSA API version 3.9.0029
 Python 3.5.2 64-bit (Anaconda 4.2.0)
-NumPy 1.11.0, MatPlotLib 1.5.3
+NumPy 1.11.2, MatPlotLib 1.5.3
 To get Anaconda: http://continuum.io/downloads
 Anaconda includes NumPy and MatPlotLib
 """
@@ -14,15 +14,14 @@ Anaconda includes NumPy and MatPlotLib
 from ctypes import *
 import numpy as np
 import matplotlib.pyplot as plt
-import os
-
+from os import chdir
 """
 ################################################################
 C:\Tektronix\RSA_API\lib\x64 needs to be added to the 
 PATH system environment variable
 ################################################################
 """
-os.chdir("C:\\Tektronix\\RSA_API\\lib\\x64")
+chdir("C:\\Tektronix\\RSA_API\\lib\\x64")
 rsa = cdll.LoadLibrary("RSA_API.dll")
 
 
@@ -43,8 +42,10 @@ class Spectrum_Settings(Structure):
 	('actualVBW', c_double), 
 	('actualNumIQSamples', c_double)]
 
+
 class Spectrum_TraceInfo(Structure):
 	_fields_ = [('timestamp', c_int64), ('acqDataStatus', c_uint16)]
+
 
 def search_connect():
     #search/connect variables
@@ -93,6 +94,7 @@ def search_connect():
             selection = int(input('Select device between 0 and {}\n> '.format(numFound.value-1)))
         rsa.DEVICE_Connect(deviceIDs[selection])
         return selection
+
 
 def print_spectrum_settings(specSet):
 	#print out spectrum settings for a sanity check

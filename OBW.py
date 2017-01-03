@@ -2,11 +2,11 @@
 Tektronix RSA API: Occupied Bandwidth and Peak Power
 Author: Morgan Allison
 Date created: 6/15
-Date edited: 11/16
+Date edited: 1/17
 Windows 7 64-bit
 RSA API version 3.9.0029
 Python 3.5.2 64-bit (Anaconda 4.2.0)
-NumPy 1.11.0, MatPlotLib 1.5.3
+NumPy 1.11.2, MatPlotLib 1.5.3
 To get Anaconda: http://continuum.io/downloads
 Anaconda includes NumPy and MatPlotLib
 """
@@ -14,8 +14,7 @@ Anaconda includes NumPy and MatPlotLib
 from ctypes import *
 import numpy as np
 import matplotlib.pyplot as plt
-import os
-
+from os import chdir
 
 """
 ################################################################
@@ -23,7 +22,7 @@ C:\Tektronix\RSA_API\lib\x64 needs to be added to the
 PATH system environment variable
 ################################################################
 """
-os.chdir("C:\\Tektronix\\RSA_API\\lib\\x64")
+chdir("C:\\Tektronix\\RSA_API\\lib\\x64")
 rsa = cdll.LoadLibrary("RSA_API.dll")
 
 
@@ -44,8 +43,10 @@ class Spectrum_Settings(Structure):
     ('actualVBW', c_double), 
     ('actualNumIQSamples', c_double)]
 
+
 class Spectrum_TraceInfo(Structure):
     _fields_ = [('timestamp', c_int64), ('acqDataStatus', c_uint16)]
+
 
 def search_connect():
     #search/connect variables
@@ -95,6 +96,7 @@ def search_connect():
         rsa.DEVICE_Connect(deviceIDs[selection])
         return selection
 
+
 def calc_obw(trace, freq, span, rbw, tLength):
     #integrated power calculation
     #convert dBm to mW and normalize to span
@@ -129,6 +131,7 @@ def calc_obw(trace, freq, span, rbw, tLength):
     print('Power at f1: {:3.2f} dBm. Power at f2: {:3.2f} dBm'.format(trace[j], trace[k]))
     return f2-f1, f1, f2
 
+
 def print_spectrum_settings(specSet):
     #print out spectrum settings for a sanity check
     print('Span: ' + str(specSet.span))
@@ -143,6 +146,7 @@ def print_spectrum_settings(specSet):
     print('Actual Freq Step Size: ' + str(specSet.actualFreqStepSize))
     print('Actual RBW: ' + str(specSet.actualRBW))
     print('Actual VBW: ' + str(specSet.actualVBW))
+
 
 def main():
     """#################INITIALIZE VARIABLES#################"""
@@ -264,6 +268,7 @@ def main():
 
     print('Disconnecting.')
     rsa.DEVICE_Disconnect()
+
 
 if __name__ == "__main__":
     main()

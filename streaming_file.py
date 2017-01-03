@@ -12,7 +12,8 @@ Anaconda includes NumPy and MatPlotLib
 """
 
 from ctypes import *
-import time, os
+from os import chdir
+import time
 
 """
 ################################################################
@@ -20,8 +21,9 @@ C:\Tektronix\RSA_API\lib\x64 needs to be added to the
 PATH system environment variable
 ################################################################
 """
-os.chdir("C:\\Tektronix\\RSA_API\\lib\\x64")
+chdir("C:\\Tektronix\\RSA_API\\lib\\x64")
 rsa = cdll.LoadLibrary("RSA_API.dll")
+
 
 """#################CLASSES AND FUNCTIONS#################"""
 class IQSTRMFILEINFO(Structure):
@@ -31,6 +33,7 @@ class IQSTRMFILEINFO(Structure):
    ('triggerTimestamp', c_uint64),
    ('acqStatus', c_uint32), 
    ('filenames', c_wchar_p)]
+
 
 def iqstream_status_parser(acqStatus):
 	#this function parses the IQ streaming status variable
@@ -46,6 +49,7 @@ def iqstream_status_parser(acqStatus):
 		print('\nOutput buffer > 75{} full.\n'.format('%'))
 	if (bool(acqStatus & 0x200000)):	#mask bit 21
 		print('Output buffer overflow. File writing too slow, data loss has occurred.\n')
+
 
 def suf_ext_parser(streamtype, streamingMode, dest, suffixCtl):
 	#this function handles printing the location of the saved file
@@ -72,6 +76,7 @@ def suf_ext_parser(streamtype, streamingMode, dest, suffixCtl):
 		elif suffixCtl.value >= 0:
 			suf = '000x'
 		return suf, ext
+
 
 def streaming_setup_fixed():
 	#this function sets up IQ streaming without command line user input
@@ -103,6 +108,7 @@ def streaming_setup_fixed():
 	rsa.SetStreamADCToDiskMaxFileCount(c_int(1))
 
 	return waitTime, dest, dtype, suffixCtl, fileDirectory, fileName, streamingMode
+
 
 def search_connect():
     #search/connect variables
@@ -151,6 +157,7 @@ def search_connect():
             selection = int(input('Select device between 0 and {}\n> '.format(numFound.value-1)))
         rsa.DEVICE_Connect(deviceIDs[selection])
         return selection
+
 
 def main():
 	"""#################INITIALIZE VARIABLES#################"""
@@ -316,6 +323,7 @@ def main():
 
 	print('Disconnecting.')
 	rsa.DEVICE_Disconnect()
+
 
 if __name__ == "__main__":
     main()
