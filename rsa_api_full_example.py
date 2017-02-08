@@ -240,6 +240,11 @@ def config_block_iq(cf=1e9, refLevel=0, iqBw=40e6, recordLength=10e3):
     rsa.IQBLK_GetIQSampleRate(byref(iqSampleRate))
     # Create array of time data for plotting IQ vs time
     time = np.linspace(0,recordLength/iqSampleRate.value, recordLength)
+    time1 = []
+    step = recordLength/iqSampleRate.value/(recordLength-1)
+    for i in range(recordLength):
+        time1.append(i*step)
+        print('{:.9f}\t{:.9f}'.format(time[i], time1[i]))
     return time
 
 
@@ -267,7 +272,7 @@ def block_iq_example():
     cf = 1e9
     refLevel = 0
     iqBw = 40e6
-    recordLength = 10e3
+    recordLength = 1e3
 
     time = config_block_iq(cf, refLevel, iqBw, recordLength)
     IQ = acquire_block_iq(recordLength)
@@ -353,24 +358,14 @@ def extract_dpx_spectrum(fb):
 
 
 def extract_dpxogram(fb):
-    sogramSet = DPX_SogramSettingStruct()
-    rsa.DPX_GetSogramSettings(byref(sogramSet))
-    timeResolution = sogramSet.sogramTraceLineTime
+    # When converting a ctypes pointer to a numpy array, we need to 
+    # explicitly specify its length to dereference it correctly
+    dpxogram = np.array(fb.sogramBitmap[:fb.sogramBitmapSize])
+    dpxogram = dpxogram.reshape((fb.sogramBitmapHeight, 
+        fb.sogramBitmapWidth))
+    dpxogram = dpxogram[:fb.sogramBitmapNumValidLines,:]
 
-    intArray = c_int16*fb.spectrumTraceLength
-    vData = intArray()
-    vDataSize = c_int32(0)
-    dataSF = c_double(0)
-    validTraces = fb.sogramBitmapNumValidLines
-    dpxogram = np.empty((validTraces,fb.spectrumTraceLength))
-
-    for i in range(validTraces):
-        rsa.DPX_GetSogramHiResLine(vData, byref(vDataSize), c_int32(i), 
-        byref(dataSF), c_int32(fb.spectrumTraceLength), c_int32(0))
-        dpxogram[i] = np.array(vData)
-    dpxogram = dpxogram*dataSF.value
-
-    return dpxogram, timeResolution
+    return dpxogram
 
 
 def dpx_example():
@@ -384,44 +379,48 @@ def dpx_example():
     fb = acquire_dpx_frame()
 
     dpxBitmap, specTrace1, specTrace2, specTrace3 = extract_dpx_spectrum(fb)
-    dpxogram, timeResolution = extract_dpxogram(fb)
+    dpxogram = extract_dpxogram(fb)
+    numTicks = 11
+    plotFreq = np.linspace(cf-span/2, cf+span/2, numTicks)/1e9
+    
+
 
     """################PLOT################"""
     # Plot out the three DPX spectrum traces
     fig = plt.figure(1, figsize=(22,12))
     ax1 = fig.add_subplot(131)
     ax1.set_title('DPX Spectrum Traces')
-    ax1.set_xlabel('Frequency (Hz)')
+    ax1.set_xlabel('Frequency (GHz)')
     ax1.set_ylabel('Amplitude (dBm)')
+    dpxFreq /= 1e9
     st1, = plt.plot(dpxFreq, specTrace1)
     st2, = plt.plot(dpxFreq, specTrace2)
     st3, = plt.plot(dpxFreq, specTrace3)
     ax1.legend([st1, st2, st3], ['Max Hold', 'Min Hold', 'Average'])
     ax1.set_xlim([dpxFreq[0], dpxFreq[-1]])
 
-    # This figure is a 3D representation of the DPX bitmap  
-    # The methodology was patched together from a few Matplotlib example files
-    # If anyone can figure out how to do a 3D colormap, that'd be cool.
-    ax2 = fig.add_subplot(132, projection='3d')
-    for i in range(fb.spectrumBitmapHeight):
-        index = fb.spectrumBitmapHeight-1-i
-        ax2.plot(dpxBitmap[i], dpxFreq, dpxAmp[index], color='b')
+    # Show the colorized DPX display
+    ax2 = fig.add_subplot(132)
+    ax2.imshow(dpxBitmap)
+    ax2.set_aspect(7)
     ax2.set_title('DPX Bitmap')
-    ax2.set_zlim(refLevel-100, refLevel)
-    ax2.set_xlabel('Spectral Density (counter hits)')
-    ax2.set_ylabel('Frequency (Hz)')
-    ax2.set_zlabel('Amplitude (dBm)')
+    ax2.set_xlabel('Frequency (GHz)')
+    ax2.set_ylabel('Amplitude (dBm)')
+    xTicks = map('{:.4}'.format, plotFreq)
+    plt.xticks(np.linspace(0, fb.spectrumBitmapWidth, numTicks), xTicks)
+    yTicks = map('{}'.format, np.linspace(refLevel, refLevel-100, numTicks))
+    plt.yticks(np.linspace(0, fb.spectrumBitmapHeight, numTicks), yTicks)
+    
+    # Show the colorized DPXogram
+    ax3 = fig.add_subplot(133)
+    ax3.imshow(dpxogram)
+    ax3.set_aspect(12)
+    ax3.set_title('DPXogram')
+    ax3.set_xlabel('Frequency (GHz)')
+    ax3.set_ylabel('Trace Lines')
+    xTicks = map('{:.4}'.format, plotFreq)
+    plt.xticks(np.linspace(0, fb.sogramBitmapWidth, numTicks), xTicks)
 
-    # This plot is a composite 3D representation of all DPXogram traces
-    ax3 = fig.add_subplot(133, projection='3d')
-    for i in range(fb.sogramBitmapNumValidLines):
-        ax3.plot(dpxFreq, dpxogram[i], i*timeResolution, color='b', zdir='y')
-    ax3.set_title('DPXogram Traces')
-    ax3.set_ylim(0, fb.sogramBitmapNumValidLines*timeResolution)
-    ax3.set_zlim(np.amin(dpxogram), np.amax(dpxogram))
-    ax3.set_xlabel('Frequency (Hz)')
-    ax3.set_ylabel('Time (sec)')
-    ax3.set_zlabel('Amplitude (dBm)')
     plt.tight_layout()
     plt.show()
     rsa.DEVICE_Disconnect()
@@ -545,9 +544,9 @@ def peak_power_detector(freq, trace):
 
 def main():
     # uncomment the example you'd like to run
-    spectrum_example()
+    # spectrum_example()
     # block_iq_example()
-    # dpx_example()
+    dpx_example()
     # if_stream_example()
     # iq_stream_example()
 
