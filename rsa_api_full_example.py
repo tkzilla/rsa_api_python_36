@@ -2,11 +2,11 @@
 Tektronix RSA_API Example
 Author: Morgan Allison
 Date created: 6/15
-Date edited: 1/17
+Date edited: 2/17
 Windows 7 64-bit
 RSA API version 3.9.0029
-Python 3.5.2 64-bit (Anaconda 4.2.0)
-NumPy 1.11.2, MatPlotLib 1.5.3
+Python 3.6.0 64-bit (Anaconda 4.3.0)
+NumPy 1.11.3, MatPlotLib 2.0.0
 Download Anaconda: http://continuum.io/downloads
 Anaconda includes NumPy and MatPlotLib
 Download the RSA_API: http://www.tek.com/model/rsa306-software
@@ -18,17 +18,12 @@ YOU WILL NEED TO REFERENCE THE API DOCUMENTATION
 
 from ctypes import *
 from os import chdir
-from mpl_toolkits.mplot3d import Axes3D
-import time
+from time import sleep
 import numpy as np
 import matplotlib.pyplot as plt
 
-"""
-#############################################################
-C:\Tektronix\RSA_API\lib\x64 needs to be added to the 
-PATH system environment variable
-#############################################################
-"""
+# C:\Tektronix\RSA_API\lib\x64 needs to be added to the 
+# PATH system environment variable
 chdir("C:\\Tektronix\\RSA_API\\lib\\x64")
 rsa = cdll.LoadLibrary("RSA_API.dll")
 
@@ -210,7 +205,7 @@ def spectrum_example():
     freq = create_frequency_array(specSet)
     peakPower, peakFreq = peak_power_detector(freq, trace)
 
-    fig = plt.figure(1,figsize=(20,10))
+    fig = plt.figure(1,figsize=(15,10))
     ax = plt.subplot(111, axisbg='k')
     ax.plot(freq, trace, color='y')
     ax.set_title('Spectrum Trace')
@@ -244,7 +239,6 @@ def config_block_iq(cf=1e9, refLevel=0, iqBw=40e6, recordLength=10e3):
     step = recordLength/iqSampleRate.value/(recordLength-1)
     for i in range(recordLength):
         time1.append(i*step)
-        print('{:.9f}\t{:.9f}'.format(time[i], time1[i]))
     return time
 
 
@@ -277,7 +271,7 @@ def block_iq_example():
     time = config_block_iq(cf, refLevel, iqBw, recordLength)
     IQ = acquire_block_iq(recordLength)
 
-    fig = plt.figure(1, figsize=(20,10))
+    fig = plt.figure(1, figsize=(15,10))
     fig.suptitle('I and Q vs Time', fontsize='20')
     ax1 = plt.subplot(211, axisbg='k')
     ax1.plot(time*1e3, np.real(IQ), color='y')
@@ -387,7 +381,7 @@ def dpx_example():
 
     """################PLOT################"""
     # Plot out the three DPX spectrum traces
-    fig = plt.figure(1, figsize=(22,12))
+    fig = plt.figure(1, figsize=(15,10))
     ax1 = fig.add_subplot(131)
     ax1.set_title('DPX Spectrum Traces')
     ax1.set_xlabel('Frequency (GHz)')
@@ -450,7 +444,7 @@ def if_stream_example():
     rsa.DEVICE_Run()
     rsa.IFSTREAM_SetEnable(c_bool(True))
     while writing.value == True:
-        time.sleep(waitTime)
+        sleep(waitTime)
         rsa.IFSTREAM_GetActiveStatus(byref(writing))
     print('Streaming finished.')
     rsa.DEVICE_Stop()
@@ -460,7 +454,7 @@ def if_stream_example():
 """################IQ STREAMING EXAMPLE################"""
 def config_iq_stream(cf=1e9, refLevel=0, bw=10e6, 
     fileDir='C:\\SignalVu-PC Files', fileName='iq_stream_test', dest=2, 
-    suffixCtl=-2, durationMsec=100):
+    suffixCtl=-2, dType=2, durationMsec=100):
     filenameBase = fileDir + '\\' + fileName
     bwActual = c_double(0)
     sampleRate = c_double(0)
@@ -468,11 +462,12 @@ def config_iq_stream(cf=1e9, refLevel=0, bw=10e6,
     rsa.CONFIG_SetReferenceLevel(c_double(refLevel))
     
     rsa.IQSTREAM_SetAcqBandwidth(c_double(bw))
-    rsa.IQSTREAM_SetOutputConfiguration(c_int(dest), c_int(2))
+    rsa.IQSTREAM_SetOutputConfiguration(c_int(dest), c_int(dType))
     rsa.IQSTREAM_SetDiskFilenameBase(c_char_p(filenameBase.encode()))
     rsa.IQSTREAM_SetDiskFilenameSuffix(c_int(suffixCtl))
     rsa.IQSTREAM_SetDiskFileLength(c_int(durationMsec))
     rsa.IQSTREAM_GetAcqParameters(byref(bwActual), byref(sampleRate))
+    rsa.IQSTREAM_ClearAcqStatus()
 
 
 def iqstream_status_parser(iqStreamInfo):
@@ -498,13 +493,14 @@ def iq_stream_example():
     search_connect()
 
     cf = 2.4453e9
-    refLevel = 0
+    refLevel = -30
 
-    bw = 5e6
-    dest = 2
+    bw = 40e6
+    dest = 3
+    dType = 2
     suffixCtl = -2
-    durationMsec = 100
-    waitTime = durationMsec/1e3/10
+    durationMsec = 30000
+    waitTime = 0.1
     fileDir = 'C:\\SignalVu-PC Files'
     fileName = 'iq_stream_test'
     iqStreamInfo = IQSTREAM_File_Info()
@@ -512,12 +508,12 @@ def iq_stream_example():
     complete = c_bool(False)
     writing = c_bool(False)
 
-    config_iq_stream()
+    config_iq_stream(bw=bw, dest=dest, durationMsec=durationMsec)
 
     rsa.DEVICE_Run()    
     rsa.IQSTREAM_Start()
     while complete.value == False:
-        time.sleep(waitTime)
+        sleep(waitTime)
         rsa.IQSTREAM_GetDiskFileWriteStatus(byref(complete), byref(writing))
     rsa.IQSTREAM_Stop()
     print('Streaming finished.')
