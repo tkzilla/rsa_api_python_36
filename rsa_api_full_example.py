@@ -27,79 +27,78 @@ import matplotlib.pyplot as plt
 chdir("C:\\Tektronix\\RSA_API\\lib\\x64")
 rsa = cdll.LoadLibrary("RSA_API.dll")
 
-
 """################CLASSES AND FUNCTIONS################"""
 class Spectrum_Settings(Structure):
-    _fields_ = [('span', c_double), 
-    ('rbw', c_double),
-    ('enableVBW', c_bool), 
-    ('vbw', c_double),
-    ('traceLength', c_int), 
-    ('window', c_int),
-    ('verticalUnit', c_int), 
-    ('actualStartFreq', c_double), 
-    ('actualStopFreq', c_double),
-    ('actualFreqStepSize', c_double), 
-    ('actualRBW', c_double),
-    ('actualVBW', c_double), 
-    ('actualNumIQSamples', c_double)]
+    _fields_ = [('span', c_double),
+                ('rbw', c_double),
+                ('enableVBW', c_bool),
+                ('vbw', c_double),
+                ('traceLength', c_int),
+                ('window', c_int),
+                ('verticalUnit', c_int),
+                ('actualStartFreq', c_double),
+                ('actualStopFreq', c_double),
+                ('actualFreqStepSize', c_double),
+                ('actualRBW', c_double),
+                ('actualVBW', c_double),
+                ('actualNumIQSamples', c_double)]
 
 
 class Spectrum_TraceInfo(Structure):
-    _fields_ = [('timestamp', c_int64), 
-    ('acqDataStatus', c_uint16)]
+    _fields_ = [('timestamp', c_int64),
+                ('acqDataStatus', c_uint16)]
 
 
 class DPX_SettingStruct(Structure):
-    _fields_ = [('enableSpectrum', c_bool), 
-    ('enableSpectrogram', c_bool),
-    ('bitmapWidth', c_int32), 
-    ('bitmapHeight', c_int32),
-    ('traceLength', c_int32), 
-    ('decayFactor', c_float),
-    ('actualRBW', c_double)]
-    
+    _fields_ = [('enableSpectrum', c_bool),
+                ('enableSpectrogram', c_bool),
+                ('bitmapWidth', c_int32),
+                ('bitmapHeight', c_int32),
+                ('traceLength', c_int32),
+                ('decayFactor', c_float),
+                ('actualRBW', c_double)]
+
 
 class DPX_SogramSettingStruct(Structure):
-    _fields_ = [('bitmapWidth', c_int32), 
-    ('bitmapHeight', c_int32),
-    ('sogramTraceLineTime', c_double), 
-    ('sogramBitmapLineTime', c_double)]
+    _fields_ = [('bitmapWidth', c_int32),
+                ('bitmapHeight', c_int32),
+                ('sogramTraceLineTime', c_double),
+                ('sogramBitmapLineTime', c_double)]
 
 
 class DPX_FrameBuffer(Structure):
-    _fields_ = [('fftPerFrame', c_int32), 
-    ('fftCount', c_int64),
-    ('frameCount', c_int64), 
-    ('timestamp', c_double),
-    ('acqDataStatus', c_uint32), 
-    ('minSigDuration', c_double),
-    ('minSigDurOutOfRange', c_bool), 
-    ('spectrumBitmapWidth', c_int32), 
-    ('spectrumBitmapHeight', c_int32), 
-    ('spectrumBitmapSize', c_int32),
-    ('spectrumTraceLength', c_int32), 
-    ('numSpectrumTraces', c_int32),
-    ('spectrumEnabled', c_bool), 
-    ('spectrogramEnabled', c_bool),
-    ('spectrumBitmap', POINTER(c_float)), 
-    ('spectrumTraces', POINTER(POINTER(c_float))), 
-    ('sogramBitmapWidth', c_int32), 
-    ('sogramBitmapHeight',c_int32),
-    ('sogramBitmapSize', c_int32), 
-    ('sogramBitmapNumValidLines',c_int32),
-    ('sogramBitmap', POINTER(c_uint8)),
-    ('sogramBitmapTimestampArray', POINTER(c_double)), 
-    ('sogramBitmapContainTriggerArray', POINTER(c_double))]
+    _fields_ = [('fftPerFrame', c_int32),
+                ('fftCount', c_int64),
+                ('frameCount', c_int64),
+                ('timestamp', c_double),
+                ('acqDataStatus', c_uint32),
+                ('minSigDuration', c_double),
+                ('minSigDurOutOfRange', c_bool),
+                ('spectrumBitmapWidth', c_int32),
+                ('spectrumBitmapHeight', c_int32),
+                ('spectrumBitmapSize', c_int32),
+                ('spectrumTraceLength', c_int32),
+                ('numSpectrumTraces', c_int32),
+                ('spectrumEnabled', c_bool),
+                ('spectrogramEnabled', c_bool),
+                ('spectrumBitmap', POINTER(c_float)),
+                ('spectrumTraces', POINTER(POINTER(c_float))),
+                ('sogramBitmapWidth', c_int32),
+                ('sogramBitmapHeight', c_int32),
+                ('sogramBitmapSize', c_int32),
+                ('sogramBitmapNumValidLines', c_int32),
+                ('sogramBitmap', POINTER(c_uint8)),
+                ('sogramBitmapTimestampArray', POINTER(c_double)),
+                ('sogramBitmapContainTriggerArray', POINTER(c_double))]
 
 
 class IQSTREAM_File_Info(Structure):
-   _fields_ = [('numberSamples', c_uint64), 
-   ('sample0Timestamp', c_uint64),
-   ('triggerSampleIndex', c_uint64), 
-   ('triggerTimestamp', c_uint64),
-   ('acqStatus', c_uint32), 
-   ('filenames', c_wchar_p)]
+    _fields_ = [('numberSamples', c_uint64),
+                ('sample0Timestamp', c_uint64),
+                ('triggerSampleIndex', c_uint64),
+                ('triggerTimestamp', c_uint64),
+                ('acqStatus', c_uint32),
+                ('filenames', c_wchar_p)]
 
 
 def err_check(returnStatus):
@@ -111,7 +110,7 @@ def err_check(returnStatus):
 
 def search_connect():
     numFound = c_int(0)
-    intArray = c_int*10
+    intArray = c_int * 10
     deviceIDs = intArray()
     deviceSerial = create_string_buffer(8)
     deviceType = create_string_buffer(8)
@@ -120,8 +119,8 @@ def search_connect():
     rsa.DEVICE_GetAPIVersion(apiVersion)
     print('API Version {}'.format(apiVersion.value.decode()))
 
-    ret = rsa.DEVICE_Search(byref(numFound), deviceIDs, 
-        deviceSerial, deviceType)
+    ret = rsa.DEVICE_Search(byref(numFound), deviceIDs,
+                            deviceSerial, deviceType)
     err_check(ret)
 
     if numFound.value < 1:
@@ -145,16 +144,18 @@ def search_connect():
             print('Device Type: {}'.format(deviceType.value))
             print('Device serial number: {}'.format(deviceSerial.value))
             rsa.DEVICE_Disconnect()
-        #note: the API can only currently access one at a time
+        # note: the API can only currently access one at a time
         selection = 1024
-        while (selection > numFound.value-1) or (selection < 0):
-            selection = int(input('Select device between 0 and {}\n> '.format(numFound.value-1)))
+        while (selection > numFound.value - 1) or (selection < 0):
+            selection = int(input('Select device between 0 and {}\n> '.format(numFound.value - 1)))
         ret = rsa.DEVICE_Connect(deviceIDs[selection])
         err_check(ret)
     rsa.CONFIG_Preset()
 
 
 """################SPECTRUM EXAMPLE################"""
+
+
 def config_spectrum(cf=1e9, refLevel=0, span=40e6, rbw=300e3):
     rsa.SPECTRUM_SetEnable(c_bool(True))
     rsa.CONFIG_SetCenterFreq(c_double(cf))
@@ -172,29 +173,30 @@ def config_spectrum(cf=1e9, refLevel=0, span=40e6, rbw=300e3):
 
 def create_frequency_array(specSet):
     # Create array of frequency data for plotting the spectrum.
-    freq = np.arange(specSet.actualStartFreq, specSet.actualStartFreq 
-        + specSet.actualFreqStepSize*specSet.traceLength, 
-        specSet.actualFreqStepSize)
+    freq = np.arange(specSet.actualStartFreq, specSet.actualStartFreq
+                     + specSet.actualFreqStepSize * specSet.traceLength,
+                     specSet.actualFreqStepSize)
     return freq
 
 
 def acquire_spectrum(specSet):
     ready = c_bool(False)
-    traceArray = c_float*specSet.traceLength
+    traceArray = c_float * specSet.traceLength
     traceData = traceArray()
     outTracePoints = c_int(0)
 
     rsa.DEVICE_Run()
     rsa.SPECTRUM_AcquireTrace()
-    while ready.value == False:
+    while not ready.value:
         rsa.SPECTRUM_WaitForDataReady(c_int(100), byref(ready))
-    rsa.SPECTRUM_GetTrace(c_int(0), specSet.traceLength, byref(traceData), 
-        byref(outTracePoints))
+    rsa.SPECTRUM_GetTrace(c_int(0), specSet.traceLength, byref(traceData),
+                          byref(outTracePoints))
     rsa.DEVICE_Stop()
     return np.array(traceData)
 
 
 def spectrum_example():
+    print('\n\n########Spectrum Example########')
     search_connect()
     cf = 2.4453e9
     refLevel = -30
@@ -205,24 +207,26 @@ def spectrum_example():
     freq = create_frequency_array(specSet)
     peakPower, peakFreq = peak_power_detector(freq, trace)
 
-    fig = plt.figure(1,figsize=(15,10))
-    ax = plt.subplot(111, axisbg='k')
+    plt.figure(1, figsize=(15, 10))
+    ax = plt.subplot(111, facecolor='k')
     ax.plot(freq, trace, color='y')
     ax.set_title('Spectrum Trace')
     ax.set_xlabel('Frequency (Hz)')
     ax.set_ylabel('Amplitude (dBm)')
     ax.axvline(peakFreq)
-    ax.text((freq[0]+specSet.span/20), peakPower, 
-        'Peak power in spectrum: {:.2f} dBm @ {} MHz'.format(peakPower, 
-            peakFreq/1e6), color='white')
+    ax.text((freq[0] + specSet.span / 20), peakPower,
+            'Peak power in spectrum: {:.2f} dBm @ {} MHz'.format(peakPower,
+                                                                 peakFreq / 1e6), color='white')
     ax.set_xlim([freq[0], freq[-1]])
-    ax.set_ylim([refLevel-100, refLevel])
+    ax.set_ylim([refLevel - 100, refLevel])
     plt.tight_layout()
     plt.show()
     rsa.DEVICE_Disconnect()
 
 
 """################BLOCK IQ EXAMPLE################"""
+
+
 def config_block_iq(cf=1e9, refLevel=0, iqBw=40e6, recordLength=10e3):
     recordLength = int(recordLength)
     rsa.CONFIG_SetCenterFreq(c_double(cf))
@@ -230,38 +234,39 @@ def config_block_iq(cf=1e9, refLevel=0, iqBw=40e6, recordLength=10e3):
 
     rsa.IQBLK_SetIQBandwidth(c_double(iqBw))
     rsa.IQBLK_SetIQRecordLength(c_int(recordLength))
-    
+
     iqSampleRate = c_double(0)
     rsa.IQBLK_GetIQSampleRate(byref(iqSampleRate))
     # Create array of time data for plotting IQ vs time
-    time = np.linspace(0,recordLength/iqSampleRate.value, recordLength)
+    time = np.linspace(0, recordLength / iqSampleRate.value, recordLength)
     time1 = []
-    step = recordLength/iqSampleRate.value/(recordLength-1)
+    step = recordLength / iqSampleRate.value / (recordLength - 1)
     for i in range(recordLength):
-        time1.append(i*step)
+        time1.append(i * step)
     return time
 
 
 def acquire_block_iq(recordLength=10e3):
     recordLength = int(recordLength)
     ready = c_bool(False)
-    iqArray = c_float*recordLength
+    iqArray = c_float * recordLength
     iData = iqArray()
     qData = iqArray()
     outLength = 0
     rsa.DEVICE_Run()
     rsa.IQBLK_AcquireIQData()
-    while ready.value == False:
+    while not ready.value:
         rsa.IQBLK_WaitForIQDataReady(c_int(100), byref(ready))
-    rsa.IQBLK_GetIQDataDeinterleaved(byref(iData), byref(qData), 
-        byref(c_int(outLength)), c_int(recordLength))
+    rsa.IQBLK_GetIQDataDeinterleaved(byref(iData), byref(qData),
+                                     byref(c_int(outLength)), c_int(recordLength))
     rsa.DEVICE_Stop()
 
-    IQ = np.array(iData) + 1j*np.array(qData)
+    IQ = np.array(iData) + 1j * np.array(qData)
     return IQ
 
 
 def block_iq_example():
+    print('\n\n########Block IQ Example########')
     search_connect()
     cf = 1e9
     refLevel = 0
@@ -271,23 +276,25 @@ def block_iq_example():
     time = config_block_iq(cf, refLevel, iqBw, recordLength)
     IQ = acquire_block_iq(recordLength)
 
-    fig = plt.figure(1, figsize=(15,10))
+    fig = plt.figure(1, figsize=(15, 10))
     fig.suptitle('I and Q vs Time', fontsize='20')
-    ax1 = plt.subplot(211, axisbg='k')
-    ax1.plot(time*1e3, np.real(IQ), color='y')
+    ax1 = plt.subplot(211, facecolor='k')
+    ax1.plot(time * 1e3, np.real(IQ), color='y')
     ax1.set_ylabel('I (V)')
-    ax1.set_xlim([time[0]*1e3, time[-1]*1e3])
-    ax2 = plt.subplot(212, axisbg='k')
-    ax2.plot(time*1e3, np.imag(IQ), color='c')
+    ax1.set_xlim([time[0] * 1e3, time[-1] * 1e3])
+    ax2 = plt.subplot(212, facecolor='k')
+    ax2.plot(time * 1e3, np.imag(IQ), color='c')
     ax2.set_ylabel('I (V)')
     ax2.set_xlabel('Time (msec)')
-    ax2.set_xlim([time[0]*1e3, time[-1]*1e3])
+    ax2.set_xlim([time[0] * 1e3, time[-1] * 1e3])
     plt.tight_layout()
     plt.show()
     rsa.DEVICE_Disconnect()
 
 
 """################DPX EXAMPLE################"""
+
+
 def config_DPX(cf=1e9, refLevel=0, span=40e6, rbw=300e3):
     yTop = refLevel
     yBottom = yTop - 100
@@ -297,10 +304,10 @@ def config_DPX(cf=1e9, refLevel=0, span=40e6, rbw=300e3):
 
     rsa.DPX_SetEnable(c_bool(True))
     rsa.DPX_SetParameters(c_double(span), c_double(rbw), c_int(801), c_int(1),
-        c_int(0), c_double(yTop), c_double(yBottom), c_bool(False),
-        c_double(1.0), c_bool(False))
-    rsa.DPX_SetSogramParameters(c_double(1e-3), c_double(1e-3), 
-        c_double(refLevel), c_double(refLevel-100))
+                          c_int(0), c_double(yTop), c_double(yBottom), c_bool(False),
+                          c_double(1.0), c_bool(False))
+    rsa.DPX_SetSogramParameters(c_double(1e-3), c_double(1e-3),
+                                c_double(refLevel), c_double(refLevel - 100))
     rsa.DPX_Configure(c_bool(True), c_bool(True))
 
     rsa.DPX_SetSpectrumTraceType(c_int32(0), c_int(2))
@@ -308,7 +315,7 @@ def config_DPX(cf=1e9, refLevel=0, span=40e6, rbw=300e3):
     rsa.DPX_SetSpectrumTraceType(c_int32(2), c_int(0))
 
     rsa.DPX_GetSettings(byref(dpxSet))
-    dpxFreq = np.linspace((cf-span/2), (cf+span/2), dpxSet.bitmapWidth)
+    dpxFreq = np.linspace((cf - span / 2), (cf + span / 2), dpxSet.bitmapWidth)
     dpxAmp = np.linspace(yBottom, yTop, dpxSet.bitmapHeight)
     return dpxFreq, dpxAmp
 
@@ -321,9 +328,9 @@ def acquire_dpx_frame():
     rsa.DEVICE_Run()
     rsa.DPX_Reset()
 
-    while frameAvailable.value == False:
+    while not frameAvailable.value:
         rsa.DPX_IsFrameBufferAvailable(byref(frameAvailable))
-        while ready.value == False:
+        while not ready.value:
             rsa.DPX_WaitForDataReady(c_int(100), byref(ready))
     rsa.DPX_GetFrameBuffer(byref(fb))
     rsa.DPX_FinishFrameBuffer()
@@ -335,34 +342,38 @@ def extract_dpx_spectrum(fb):
     # When converting a ctypes pointer to a numpy array, we need to 
     # explicitly specify its length to dereference it correctly
     dpxBitmap = np.array(fb.spectrumBitmap[:fb.spectrumBitmapSize])
-    dpxBitmap = dpxBitmap.reshape((fb.spectrumBitmapHeight, 
-        fb.spectrumBitmapWidth))
+    dpxBitmap = dpxBitmap.reshape((fb.spectrumBitmapHeight,
+                                   fb.spectrumBitmapWidth))
 
     # Grab trace data and convert from W to dBm
+    # http://www.rapidtables.com/convert/power/Watt_to_dBm.htm
     # Note: fb.spectrumTraces is a pointer to a pointer, so we need to 
     # go through an additional dereferencing step
-    specTrace1 = 20*np.log10(np.array(
-        fb.spectrumTraces[0][:fb.spectrumTraceLength])/1000)
-    specTrace2 = 20*np.log10(np.array(
-        fb.spectrumTraces[1][:fb.spectrumTraceLength])/1000)
-    specTrace3 = 20*np.log10(np.array(
-        fb.spectrumTraces[2][:fb.spectrumTraceLength])/1000)
+    traces = []
+    for i in range(3):
+        traces.append(10 * np.log10(1000*np.array(
+        fb.spectrumTraces[i][:fb.spectrumTraceLength])) + 30)
+    # specTrace2 = 10 * np.log10(1000*np.array(
+    #     fb.spectrumTraces[1][:fb.spectrumTraceLength])) + 30
+    # specTrace3 = 10 * np.log10(1000*np.array(
+    #     fb.spectrumTraces[2][:fb.spectrumTraceLength])) + 30
 
-    return dpxBitmap, specTrace1, specTrace2, specTrace3
-
+    # return dpxBitmap, specTrace1, specTrace2, specTrace3
+    return dpxBitmap, traces
 
 def extract_dpxogram(fb):
     # When converting a ctypes pointer to a numpy array, we need to 
     # explicitly specify its length to dereference it correctly
     dpxogram = np.array(fb.sogramBitmap[:fb.sogramBitmapSize])
-    dpxogram = dpxogram.reshape((fb.sogramBitmapHeight, 
-        fb.sogramBitmapWidth))
-    dpxogram = dpxogram[:fb.sogramBitmapNumValidLines,:]
+    dpxogram = dpxogram.reshape((fb.sogramBitmapHeight,
+                                 fb.sogramBitmapWidth))
+    dpxogram = dpxogram[:fb.sogramBitmapNumValidLines, :]
 
     return dpxogram
 
 
 def dpx_example():
+    print('\n\n########DPX Example########')
     search_connect()
     cf = 2.4453e9
     refLevel = -30
@@ -372,24 +383,22 @@ def dpx_example():
     dpxFreq, dpxAmp = config_DPX(cf, refLevel, span, rbw)
     fb = acquire_dpx_frame()
 
-    dpxBitmap, specTrace1, specTrace2, specTrace3 = extract_dpx_spectrum(fb)
+    dpxBitmap, traces = extract_dpx_spectrum(fb)
     dpxogram = extract_dpxogram(fb)
     numTicks = 11
-    plotFreq = np.linspace(cf-span/2, cf+span/2, numTicks)/1e9
-    
-
+    plotFreq = np.linspace(cf - span / 2, cf + span / 2, numTicks) / 1e9
 
     """################PLOT################"""
     # Plot out the three DPX spectrum traces
-    fig = plt.figure(1, figsize=(15,10))
+    fig = plt.figure(1, figsize=(15, 10))
     ax1 = fig.add_subplot(131)
     ax1.set_title('DPX Spectrum Traces')
     ax1.set_xlabel('Frequency (GHz)')
     ax1.set_ylabel('Amplitude (dBm)')
     dpxFreq /= 1e9
-    st1, = plt.plot(dpxFreq, specTrace1)
-    st2, = plt.plot(dpxFreq, specTrace2)
-    st3, = plt.plot(dpxFreq, specTrace3)
+    st1, = plt.plot(dpxFreq, traces[0])
+    st2, = plt.plot(dpxFreq, traces[1])
+    st3, = plt.plot(dpxFreq, traces[2])
     ax1.legend([st1, st2, st3], ['Max Hold', 'Min Hold', 'Average'])
     ax1.set_xlim([dpxFreq[0], dpxFreq[-1]])
 
@@ -402,9 +411,9 @@ def dpx_example():
     ax2.set_ylabel('Amplitude (dBm)')
     xTicks = map('{:.4}'.format, plotFreq)
     plt.xticks(np.linspace(0, fb.spectrumBitmapWidth, numTicks), xTicks)
-    yTicks = map('{}'.format, np.linspace(refLevel, refLevel-100, numTicks))
+    yTicks = map('{}'.format, np.linspace(refLevel, refLevel - 100, numTicks))
     plt.yticks(np.linspace(0, fb.spectrumBitmapHeight, numTicks), yTicks)
-    
+
     # Show the colorized DPXogram
     ax3 = fig.add_subplot(133)
     ax3.imshow(dpxogram)
@@ -421,8 +430,9 @@ def dpx_example():
 
 
 """################IF STREAMING EXAMPLE################"""
-def config_if_stream(cf=1e9, refLevel=0, fileDir='C:\SignalVu-PC Files', 
-    fileName='if_stream_test', durationMsec=100):
+
+
+def config_if_stream(cf=1e9, refLevel=0, fileDir='C:\SignalVu-PC Files', fileName='if_stream_test', durationMsec=100):
     rsa.CONFIG_SetCenterFreq(c_double(cf))
     rsa.CONFIG_SetReferenceLevel(c_double(refLevel))
     rsa.IFSTREAM_SetDiskFilePath(c_char_p(fileDir.encode()))
@@ -434,16 +444,17 @@ def config_if_stream(cf=1e9, refLevel=0, fileDir='C:\SignalVu-PC Files',
 
 
 def if_stream_example():
+    print('\n\n########IF Stream Example########')
     search_connect()
     durationMsec = 100
-    waitTime = durationMsec/10/1000
-    config_if_stream(fileDir='C:\\SignalVu-PC Files', 
-        fileName='if_stream_test', durationMsec=durationMsec)
+    waitTime = durationMsec / 10 / 1000
+    config_if_stream(fileDir='C:\\SignalVu-PC Files',
+                     fileName='if_stream_test', durationMsec=durationMsec)
     writing = c_bool(True)
 
     rsa.DEVICE_Run()
     rsa.IFSTREAM_SetEnable(c_bool(True))
-    while writing.value == True:
+    while writing.value:
         sleep(waitTime)
         rsa.IFSTREAM_GetActiveStatus(byref(writing))
     print('Streaming finished.')
@@ -452,15 +463,14 @@ def if_stream_example():
 
 
 """################IQ STREAMING EXAMPLE################"""
-def config_iq_stream(cf=1e9, refLevel=0, bw=10e6, 
-    fileDir='C:\\SignalVu-PC Files', fileName='iq_stream_test', dest=2, 
-    suffixCtl=-2, dType=2, durationMsec=100):
+def config_iq_stream(cf=1e9, refLevel=0, bw=10e6, fileDir='C:\\SignalVu-PC Files', fileName='iq_stream_test', dest=2,
+                     suffixCtl=-2, dType=2, durationMsec=100):
     filenameBase = fileDir + '\\' + fileName
     bwActual = c_double(0)
     sampleRate = c_double(0)
     rsa.CONFIG_SetCenterFreq(c_double(cf))
     rsa.CONFIG_SetReferenceLevel(c_double(refLevel))
-    
+
     rsa.IQSTREAM_SetAcqBandwidth(c_double(bw))
     rsa.IQSTREAM_SetOutputConfiguration(c_int(dest), c_int(dType))
     rsa.IQSTREAM_SetDiskFilenameBase(c_char_p(filenameBase.encode()))
@@ -475,34 +485,28 @@ def iqstream_status_parser(iqStreamInfo):
     status = iqStreamInfo.acqStatus
     if status == 0:
         print('\nNo error.\n')
-    if (bool(status & 0x10000)):    #mask bit 16
+    if bool(status & 0x10000):  # mask bit 16
         print('\nInput overrange.\n')
-    if (bool(status & 0x40000)):    #mask bit 18
+    if bool(status & 0x40000):  # mask bit 18
         print('\nInput buffer > 75{} full.\n'.format('%'))
-    if (bool(status & 0x80000)):    #mask bit 19
+    if bool(status & 0x80000):  # mask bit 19
         print('\nInput buffer overflow. IQStream processing too slow, ',
-            'data loss has occurred.\n')
-    if (bool(status & 0x100000)):   #mask bit 20
+              'data loss has occurred.\n')
+    if bool(status & 0x100000):  # mask bit 20
         print('\nOutput buffer > 75{} full.\n'.format('%'))
-    if (bool(status & 0x200000)):   #mask bit 21
-        print('Output buffer overflow. File writing too slow, ', 
-            'data loss has occurred.\n')
+    if bool(status & 0x200000):  # mask bit 21
+        print('Output buffer overflow. File writing too slow, ',
+              'data loss has occurred.\n')
 
 
 def iq_stream_example():
+    print('\n\n########IQ Stream Example########')
     search_connect()
-
-    cf = 2.4453e9
-    refLevel = -30
 
     bw = 40e6
     dest = 3
-    dType = 2
-    suffixCtl = -2
-    durationMsec = 30000
+    durationMsec = 100
     waitTime = 0.1
-    fileDir = 'C:\\SignalVu-PC Files'
-    fileName = 'iq_stream_test'
     iqStreamInfo = IQSTREAM_File_Info()
 
     complete = c_bool(False)
@@ -510,9 +514,9 @@ def iq_stream_example():
 
     config_iq_stream(bw=bw, dest=dest, durationMsec=durationMsec)
 
-    rsa.DEVICE_Run()    
+    rsa.DEVICE_Run()
     rsa.IQSTREAM_Start()
-    while complete.value == False:
+    while not complete.value:
         sleep(waitTime)
         rsa.IQSTREAM_GetDiskFileWriteStatus(byref(complete), byref(writing))
     rsa.IQSTREAM_Stop()
@@ -535,7 +539,7 @@ def peak_power_detector(freq, trace):
     peakPower = np.amax(trace)
     peakFreq = freq[np.argmax(trace)]
 
-    return peakPower, peakFreq  
+    return peakPower, peakFreq
 
 
 def main():
