@@ -6,7 +6,6 @@ Date edited: 5/17
 Windows 7 64-bit
 RSA API version 3.9.0029
 Python 3.6.0 64-bit (Anaconda 4.3.0)
-NumPy 1.11.3, MatPlotLib 2.0.0
 Download Anaconda: http://continuum.io/downloads
 Anaconda includes NumPy and MatPlotLib
 Download the RSA_API: http://www.tek.com/model/rsa306-software
@@ -189,16 +188,30 @@ class CplxInt16(Structure):
     _fields_ = [('i', c_int16), ('q', c_int16)]
 
 
-class AcqDataStatus(Enum):
-    adcOverrange = 0x1
-    refFreqUnlock = 0x2
-    lo1Unlock = 0x4
-    lo2Unlock = 0x8
-    lowSupplyVoltage = 0x10
-    adcDataLost = 0x20
-    event1pps = 0x40
-    eventTrig1 = 0x80
-    eventTrig2 = 0x100
+AcqDataStatus_ADC_OVERRANGE = 0x1
+AcqDataStatus_REF_OSC_UNLOCK = 0x2
+AcqDataStatus_LOW_SUPPLY_VOLTAGE = 0x10
+AcqDataStatus_ADC_DATA_LOST = 0x20
+AcqDataStatus_VALID_BITS_MASK = (AcqDataStatus_ADC_OVERRANGE or AcqDataStatus_REF_OSC_UNLOCK or AcqDataStatus_LOW_SUPPLY_VOLTAGE or AcqDataStatus_ADC_DATA_LOST)
+
+
+class AcqDataStatus:
+    def __init__(self):
+        self.adcOverrange = 0x1
+        self.refFreqUnlock = 0x2
+        self.lo1Unlock = 0x4
+        self.lo2Unlock = 0x8
+        self.lowSupplyVoltage = 0x10
+        self.adcDataLost = 0x20
+        self.event1pps = 0x40
+        self.eventTrig1 = 0x80
+        self.eventTrig2 = 0x100
+
+
+DEVSRCH_MAX_NUM_DEVICES = 20
+DEVSRCH_SERIAL_MAX_STRLEN = 100
+DEVSRCH_TYPE_MAX_STRLEN = 20
+DEVINFO_MAX_STRLEN = 100
 
 
 class DEVICE_INFO(Structure):
@@ -210,20 +223,44 @@ class DEVICE_INFO(Structure):
                 ('hwVersion', c_char_p)]
 
 
-class TriggerMode(Enum):
-    freeRun = c_int(0)
-    triggered = c_int(1)
+class TriggerMode:
+    def __init__(self):
+        self.freeRun = c_int(0)
+        self.triggered = c_int(1)
+TriggerMode = TriggerMode()
 
 
-class TriggerSource(Enum):
-    TriggerSourceExternal = c_int(0)
-    TriggerSourceIFPowerLevel = c_int(1)
+class TriggerSource:
+    def __init__(self):
+        self.TriggerSourceExternal = c_int(0)
+        self.TriggerSourceIFPowerLevel = c_int(1)
+TriggerSource = TriggerSource()
 
 
-class TriggerTransition(Enum):
-    TriggerTransitionLH = c_int(1)
-    TriggerTransitionHL = c_int(2)
-    TriggerTransitionEither = c_int(3)
+class TriggerTransition:
+    def __init__(self):
+        self.TriggerTransitionLH = c_int(1)
+        self.TriggerTransitionHL = c_int(2)
+        self.TriggerTransitionEither = c_int(3)
+TriggerTransition = TriggerTransition()
+
+
+DEVEVENT_OVERRANGE = c_int(0)
+DEVEVENT_TRIGGER = c_int(1)
+DEVEVENT_1PPS = c_int(2)
+
+
+class RunMode:
+    def __init__(self):
+        self.stopped = c_int(0)
+        self.running = c_int(1)
+RunMode = RunMode()
+
+
+IQBLK_STATUS_INPUT_OVERRANGE = (1 << 0)
+IQBLK_STATUS_FREQREF_UNLOCKED = (1 << 1)
+IQBLK_STATUS_ACQ_SYS_ERROR = (1 << 2)
+IQBLK_STATUS_DATA_XFER_ERROR = (1 << 3)
 
 
 class IQBLK_ACQINFO(Structure):
@@ -242,34 +279,42 @@ class IQHeader(Structure):
                 ('timeSyncIndex', c_uint16)]
 
 
-class SpectrumWindows(Enum):
-    SpectrumWindow_Kaiser = c_int(0)
-    SpectrumWindow_Mil6dB = c_int(1)
-    SpectrumWindow_BlackmanHarris = c_int(2)
-    SpectrumWindow_Rectangle = c_int(3)
-    SpectrumWindow_FlatTop = c_int(4)
-    SpectrumWindow_Hann = c_int(5)
+class SpectrumWindows:
+    def __init__(self):
+        self.SpectrumWindow_Kaiser = c_int(0)
+        self.SpectrumWindow_Mil6dB = c_int(1)
+        self.SpectrumWindow_BlackmanHarris = c_int(2)
+        self.SpectrumWindow_Rectangle = c_int(3)
+        self.SpectrumWindow_FlatTop = c_int(4)
+        self.SpectrumWindow_Hann = c_int(5)
+SpectrumWindows = SpectrumWindows()
 
 
-class SpectrumTraces(Enum):
-    SpectrumTrace1 = c_int(0)
-    SpectrumTrace2 = c_int(1)
-    SpectrumTrace3 = c_int(2)
+class SpectrumTraces:
+    def __init__(self):
+        self.SpectrumTrace1 = c_int(0)
+        self.SpectrumTrace2 = c_int(1)
+        self.SpectrumTrace3 = c_int(2)
+SpectrumTraces = SpectrumTraces()
 
 
-class SpectrumDetectors(Enum):
-    SpectrumDetector_PosPeak = c_int(0)
-    SpectrumDetector_NegPeak = c_int(1)
-    SpectrumDetector_AverageVRMS = c_int(2)
-    SpectrumDetector_Sample = c_int(3)
+class SpectrumDetectors:
+    def __init__(self):
+        self.SpectrumDetector_PosPeak = c_int(0)
+        self.SpectrumDetector_NegPeak = c_int(1)
+        self.SpectrumDetector_AverageVRMS = c_int(2)
+        self.SpectrumDetector_Sample = c_int(3)
+SpectrumDetectors = SpectrumDetectors()
 
 
-class SpectrumVerticalUnits(Enum):
-    SpectrumVerticalUnit_dBm = c_int(0)
-    SpectrumVerticalUnit_Watt = c_int(1)
-    SpectrumVerticalUnit_Volt = c_int(2)
-    SpectrumVerticalUnit_Amp = c_int(3)
-    SpectrumVerticalUnit_dBmV = c_int(4)
+class SpectrumVerticalUnits:
+    def __init__(self):
+        self.SpectrumVerticalUnit_dBm = c_int(0)
+        self.SpectrumVerticalUnit_Watt = c_int(1)
+        self.SpectrumVerticalUnit_Volt = c_int(2)
+        self.SpectrumVerticalUnit_Amp = c_int(3)
+        self.SpectrumVerticalUnit_dBmV = c_int(4)
+SpectrumVerticalUnits = SpectrumVerticalUnits()
 
 
 class Spectrum_Settings(Structure):
@@ -347,58 +392,83 @@ class DPX_SettingStruct(Structure):
                 ('actualRBW', c_double)]
 
 
-class TraceType(Enum):
-    TraceTypeAverage = c_int(0)
-    TraceTypeMax = c_int(1)
-    TraceTypeMaxHold = c_int(2)
-    TraceTypeMin = c_int(3)
-    TraceTypeMinHold = c_int(4)
+class TraceType:
+    def __init__(self):
+        self.TraceTypeAverage = c_int(0)
+        self.TraceTypeMax = c_int(1)
+        self.TraceTypeMaxHold = c_int(2)
+        self.TraceTypeMin = c_int(3)
+        self.TraceTypeMinHold = c_int(4)
+TraceType = TraceType()
 
 
-class VerticalUnitType(Enum):
-    VerticalUnit_dBm = c_int(0)
-    VerticalUnit_Watt = c_int(1)
-    VerticalUnit_Volt = c_int(2)
-    VerticalUnit_Amp = c_int(3)
+class VerticalUnitType:
+    def __init__(self):
+        self.VerticalUnit_dBm = c_int(0)
+        self.VerticalUnit_Watt = c_int(1)
+        self.VerticalUnit_Volt = c_int(2)
+        self.VerticalUnit_Amp = c_int(3)
+VerticalUnitType = VerticalUnitType()
 
 
-class AudioDemodMode(Enum):
-    ADM_FM_8KHZ = c_int(0)
-    ADM_FM_13KHZ = c_int(1)
-    ADM_FM_75KHZ = c_int(2)
-    ADM_FM_200KHZ = c_int(3)
-    ADM_AM_8KHZ = c_int(4)
-    ADM_NONE = c_int(5)  # internal use only
+DPX_TRACEIDX_1 = c_int(0)
+DPX_TRACEIDX_2 = c_int(1)
+DPX_TRACEIDX_3 = c_int(2)
 
 
-class StreamingMode(Enum):
-    StreamingModeRaw = c_int(0)
-    StreamingModeFormatted = c_int(1)
+class AudioDemodMode:
+    def __init__(self):
+        self.ADM_FM_8KHZ = c_int(0)
+        self.ADM_FM_13KHZ = c_int(1)
+        self.ADM_FM_75KHZ = c_int(2)
+        self.ADM_FM_200KHZ = c_int(3)
+        self.ADM_AM_8KHZ = c_int(4)
+        self.ADM_NONE = c_int(5)  # internal use only
+AudioDemodMode = AudioDemodMode()
 
 
-class IQSOUTDEST(Enum):
-    IQSOD_CLIENT = c_int(0)
-    IQSOD_FILE_TIQ = c_int(1)
-    IQSOD_FILE_SIQ = c_int(2)
-    IQSOD_FILE_SIQ_SPLIT = c_int(3)
+class StreamingMode:
+    def __init__(self):
+        self.StreamingModeRaw = c_int(0)
+        self.StreamingModeFormatted = c_int(1)
+StreamingMode = StreamingMode()
 
 
-class IQSOUTDTYPE(Enum):
-    IQSODT_SINGLE = c_int(0)
-    IQSODT_INT32 = c_int(1)
-    IQSODT_INT16 = c_int(2)
+class IQSOUTDEST:
+    def __init__(self):
+        self.IQSOD_CLIENT = c_int(0)
+        self.IQSOD_FILE_TIQ = c_int(1)
+        self.IQSOD_FILE_SIQ = c_int(2)
+        self.IQSOD_FILE_SIQ_SPLIT = c_int(3)
+IQSOUTDEST = IQSOUTDEST()
 
 
-class IQSuffixCtl(Enum):
-    IQSSDFN_SUFFIX_INCRINDEX_MIN = c_int(0)
-    IQSSDFN_SUFFIX_TIMESTAMP = c_int(-1)
-    IQSSDFN_SUFFIX_NONE = c_int(-2)
+class IQSOUTDTYPE:
+    def __init__(self):
+        self.IQSODT_SINGLE = c_int(0)
+        self.IQSODT_INT32 = c_int(1)
+        self.IQSODT_INT16 = c_int(2)
+IQSOUTDTYPE = IQSOUTDTYPE()
 
 
-class IFSuffixCtl(Enum):
-    IFSSDFN_SUFFIX_INCRINDEX_MIN = c_int(0)
-    IFSSDFN_SUFFIX_TIMESTAMP = c_int(-1)
-    IFSSDFN_SUFFIX_NONE = c_int(-2)
+IFSSDFN_SUFFIX_INCRINDEX_MIN = c_int(0)
+IFSSDFN_SUFFIX_TIMESTAMP = c_int(-1)
+IFSSDFN_SUFFIX_NONE = c_int(-2)
+
+IQSTRM_STATUS_OVERRANGE = (1 << 0)
+IQSTRM_STATUS_XFER_DISCONTINUITY = (1 << 1)
+IQSTRM_STATUS_IBUFF75PCT = (1 << 2)
+IQSTRM_STATUS_IBUFFOVFLOW = (1 << 3)
+IQSTRM_STATUS_OBUFF75PCT = (1 << 4)
+IQSTRM_STATUS_OBUFFOVFLOW = (1 << 5)
+IQSTRM_STATUS_NONSTICKY_SHIFT = 0
+IQSTRM_STATUS_STICKY_SHIFT = 16
+
+IQSTRM_MAXTRIGGERS = 100
+
+IQSSDFN_SUFFIX_INCRINDEX_MIN = c_int(0)
+IQSSDFN_SUFFIX_TIMESTAMP = c_int(-1)
+IQSSDFN_SUFFIX_NONE = c_int(-2)
 
 
 class IQSTRMIQINFO(Structure):
@@ -418,13 +488,15 @@ class IQSTREAM_File_Info(Structure):
                 ('filenames', c_wchar_p)]
 
 
-class GNSS_SATSYS(Enum):
-    GNSS_NOSYS = c_int(0)
-    GNSS_GPS_GLONASS = c_int(1)
-    GNSS_GPS_BEIDOU = c_int(2)
-    GNSS_GPS = c_int(3)
-    GNSS_GLONASS = c_int(4)
-    GNSS_BEIDOU = c_int(5)
+class GNSS_SATSYS:
+    def __init__(self):
+        self.GNSS_NOSYS = c_int(0)
+        self.GNSS_GPS_GLONASS = c_int(1)
+        self.GNSS_GPS_BEIDOU = c_int(2)
+        self.GNSS_GPS = c_int(3)
+        self.GNSS_GLONASS = c_int(4)
+        self.GNSS_BEIDOU = c_int(5)
+GNSS_SATSYS = GNSS_SATSYS()
 
 
 class POWER_INFO(Structure):

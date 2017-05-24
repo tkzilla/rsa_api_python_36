@@ -2,7 +2,7 @@
 Tektronix RSA_API Example
 Author: Morgan Allison
 Date created: 6/15
-Date edited: 2/17
+Date edited: 5/17
 Windows 7 64-bit
 RSA API version 3.9.0029
 Python 3.6.0 64-bit (Anaconda 4.3.0)
@@ -23,7 +23,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from RSA_API import *
 
-# C:\Tektronix\RSA_API\lib\x64 needs to be added to the 
+
+# C:\Tektronix\RSA_API\lib\x64 needs to be added to the
 # PATH system environment variable
 chdir("C:\\Tektronix\\RSA_API\\lib\\x64")
 rsa = cdll.LoadLibrary("RSA_API.dll")
@@ -36,20 +37,20 @@ def err_check(rs):
 
 def search_connect():
     numFound = c_int(0)
-    intArray = c_int * 10
+    intArray = c_int * DEVSRCH_MAX_NUM_DEVICES
     deviceIDs = intArray()
-    deviceSerial = create_string_buffer(8)
-    deviceType = create_string_buffer(8)
-    apiVersion = create_string_buffer(16)
+    deviceSerial = create_string_buffer(DEVSRCH_SERIAL_MAX_STRLEN)
+    deviceType = create_string_buffer(DEVSRCH_TYPE_MAX_STRLEN)
+    apiVersion = create_string_buffer(DEVINFO_MAX_STRLEN)
 
     rsa.DEVICE_GetAPIVersion(apiVersion)
     print('API Version {}'.format(apiVersion.value.decode()))
 
     err_check(rsa.DEVICE_Search(byref(numFound), deviceIDs,
-                            deviceSerial, deviceType))
+                                deviceSerial, deviceType))
 
     if numFound.value < 1:
-        rsa.DEVICE_Reset(c_int(0))
+        # rsa.DEVICE_Reset(c_int(0))
         print('No instruments found. Exiting script.')
         exit()
     elif numFound.value == 1:
@@ -85,8 +86,8 @@ def config_spectrum(cf=1e9, refLevel=0, span=40e6, rbw=300e3):
     rsa.SPECTRUM_SetDefault()
     specSet = Spectrum_Settings()
     rsa.SPECTRUM_GetSettings(byref(specSet))
-    specSet.window = SpectrumWindows.SpectrumWindow_Kaiser.value
-    specSet.verticalUnit = SpectrumVerticalUnits.SpectrumVerticalUnit_dBm.value
+    specSet.window = SpectrumWindows.SpectrumWindow_Kaiser
+    specSet.verticalUnit = SpectrumVerticalUnits.SpectrumVerticalUnit_dBm
     specSet.span = span
     specSet.rbw = rbw
     rsa.SPECTRUM_SetSettings(specSet)
@@ -107,7 +108,7 @@ def acquire_spectrum(specSet):
     traceArray = c_float * specSet.traceLength
     traceData = traceArray()
     outTracePoints = c_int(0)
-    traceSelector = SpectrumTraces.SpectrumTrace1.value
+    traceSelector = SpectrumTraces.SpectrumTrace1
 
     rsa.DEVICE_Run()
     rsa.SPECTRUM_AcquireTrace()
@@ -217,7 +218,7 @@ def block_iq_example():
 def config_DPX(cf=1e9, refLevel=0, span=40e6, rbw=300e3):
     yTop = refLevel
     yBottom = yTop - 100
-    yUnit = VerticalUnitType.VerticalUnit_dBm.value
+    yUnit = VerticalUnitType.VerticalUnit_dBm
 
     dpxSet = DPX_SettingStruct()
     rsa.CONFIG_SetCenterFreq(c_double(cf))
@@ -260,7 +261,7 @@ def acquire_dpx_frame():
 
 
 def extract_dpx_spectrum(fb):
-    # When converting a ctypes pointer to a numpy array, we need to 
+    # When converting a ctypes pointer to a numpy array, we need to
     # explicitly specify its length to dereference it correctly
     dpxBitmap = np.array(fb.spectrumBitmap[:fb.spectrumBitmapSize])
     dpxBitmap = dpxBitmap.reshape((fb.spectrumBitmapHeight,
@@ -268,7 +269,7 @@ def extract_dpx_spectrum(fb):
 
     # Grab trace data and convert from W to dBm
     # http://www.rapidtables.com/convert/power/Watt_to_dBm.htm
-    # Note: fb.spectrumTraces is a pointer to a pointer, so we need to 
+    # Note: fb.spectrumTraces is a pointer to a pointer, so we need to
     # go through an additional dereferencing step
     traces = []
     for i in range(3):
@@ -284,7 +285,7 @@ def extract_dpx_spectrum(fb):
 
 
 def extract_dpxogram(fb):
-    # When converting a ctypes pointer to a numpy array, we need to 
+    # When converting a ctypes pointer to a numpy array, we need to
     # explicitly specify its length to dereference it correctly
     dpxogram = np.array(fb.sogramBitmap[:fb.sogramBitmapSize])
     dpxogram = dpxogram.reshape((fb.sogramBitmapHeight,
@@ -357,9 +358,9 @@ def config_if_stream(cf=1e9, refLevel=0, fileDir='C:\SignalVu-PC Files', fileNam
     rsa.CONFIG_SetReferenceLevel(c_double(refLevel))
     rsa.IFSTREAM_SetDiskFilePath(c_char_p(fileDir.encode()))
     rsa.IFSTREAM_SetDiskFilenameBase(c_char_p(fileName.encode()))
-    rsa.IFSTREAM_SetDiskFilenameSuffix(IFSuffixCtl.IFSSDFN_SUFFIX_NONE.value)
+    rsa.IFSTREAM_SetDiskFilenameSuffix(IFSSDFN_SUFFIX_NONE)
     rsa.IFSTREAM_SetDiskFileLength(c_long(durationMsec))
-    rsa.IFSTREAM_SetDiskFileMode(StreamingMode.StreamingModeFormatted.value)
+    rsa.IFSTREAM_SetDiskFileMode(StreamingMode.StreamingModeFormatted)
     rsa.IFSTREAM_SetDiskFileCount(c_int(1))
 
 
@@ -384,9 +385,9 @@ def if_stream_example():
 
 """################IQ STREAMING EXAMPLE################"""
 def config_iq_stream(cf=1e9, refLevel=0, bw=10e6, fileDir='C:\\SignalVu-PC Files',
-                     fileName='iq_stream_test', dest=IQSOUTDEST.IQSOD_FILE_SIQ.value,
-                     suffixCtl=IQSuffixCtl.IQSSDFN_SUFFIX_NONE.value,
-                     dType=IQSOUTDTYPE.IQSODT_INT16.value,
+                     fileName='iq_stream_test', dest=IQSOUTDEST.IQSOD_FILE_SIQ,
+                     suffixCtl=IQSSDFN_SUFFIX_NONE,
+                     dType=IQSOUTDTYPE.IQSODT_INT16,
                      durationMsec=100):
     filenameBase = fileDir + '\\' + fileName
     bwActual = c_double(0)
@@ -427,7 +428,7 @@ def iq_stream_example():
     search_connect()
 
     bw = 40e6
-    dest = IQSOUTDEST.IQSOD_FILE_SIQ_SPLIT.value
+    dest = IQSOUTDEST.IQSOD_FILE_SIQ_SPLIT
     durationMsec = 100
     waitTime = 0.1
     iqStreamInfo = IQSTREAM_File_Info()
@@ -451,8 +452,8 @@ def iq_stream_example():
 
 
 """################MISC################"""
-def config_trigger(trigMode=TriggerMode.triggered.value, trigLevel=-10,
-                   trigSource=TriggerSource.TriggerSourceIFPowerLevel.value):
+def config_trigger(trigMode=TriggerMode.triggered, trigLevel=-10,
+                   trigSource=TriggerSource.TriggerSourceIFPowerLevel):
     rsa.TRIG_SetTriggerMode(trigMode)
     rsa.TRIG_SetIFPowerTriggerLevel(c_double(trigLevel))
     rsa.TRIG_SetTriggerSource(trigSource)
@@ -468,12 +469,11 @@ def peak_power_detector(freq, trace):
 
 def main():
     # uncomment the example you'd like to run
-    # spectrum_example()
-    # block_iq_example()
-    # dpx_example()
-    # if_stream_example()
+    spectrum_example()
+    block_iq_example()
+    dpx_example()
+    if_stream_example()
     iq_stream_example()
-
 
 if __name__ == '__main__':
     main()
