@@ -5,4 +5,4 @@ This repository contains complete RSA_API usage examples for Python, including c
 
 There are two versions, the Python-ctypes version and a Cython version.
 The Python-ctypes version calls functions directly from RSA_API.dll and handles all the Python-C type conversions in the script itself. There is a very detailed PDF walkthrough for this version.
-The Cython version is a compiled Cython module that handles all the Python-C type conversions in the module itself and there is no need to use ctypes at all in the final script. I expect this will be easiest to use even without a detailed walkthrough since the final script can be written in pure Python+NumPy.
+The Cython version is a compiled Cython module that handles all the Python-C type conversions in the module itself and there is no need to use ctypes at all in the final script. I expect this will be easiest to use even without a detailed walkthrough since the final script can be written in pure Python+NumPy. See Cython/readme.txt for more details.
