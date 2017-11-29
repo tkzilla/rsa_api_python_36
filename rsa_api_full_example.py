@@ -5,7 +5,7 @@ Date created: 6/15
 Date edited: 5/17
 Windows 7 64-bit
 RSA API version 3.9.0029
-Python 3.6.0 64-bit (Anaconda 4.3.0)
+Python 3.6.1 64-bit (Anaconda 4.3.0)
 NumPy 1.11.3, MatPlotLib 2.0.0
 Download Anaconda: http://continuum.io/downloads
 Anaconda includes NumPy and MatPlotLib
@@ -124,7 +124,7 @@ def spectrum_example():
     print('\n\n########Spectrum Example########')
     search_connect()
     cf = 2.4453e9
-    refLevel = -30
+    refLevel = 0
     span = 40e6
     rbw = 10e3
     specSet = config_spectrum(cf, refLevel, span, rbw)
@@ -132,7 +132,7 @@ def spectrum_example():
     freq = create_frequency_array(specSet)
     peakPower, peakFreq = peak_power_detector(freq, trace)
 
-    plt.figure(1, figsize=(15, 10))
+    plt.figure(1, figsize=(10, 7))
     ax = plt.subplot(111, facecolor='k')
     ax.plot(freq, trace, color='y')
     ax.set_title('Spectrum Trace')
@@ -470,8 +470,8 @@ def peak_power_detector(freq, trace):
 def main():
     # uncomment the example you'd like to run
     spectrum_example()
-    # block_iq_example()
-    # dpx_example()
+    block_iq_example()
+    dpx_example()
     # if_stream_example()
     # iq_stream_example()
 
